@@ -2,6 +2,7 @@ import numpy as np
 from .layer import Layer
 from .activator import Activator
 from .loss import Loss
+from .descriptor import Descriptor
 
 class NN:
     def __init__(
@@ -27,7 +28,7 @@ class NN:
             )
         ]
         self.loss_func = Loss.create(loss)
-    def add_layer(self, layer, out_size, *, func = None, weight = None, bias = None):
+    def add_layer(self, layer, out_size, *, func = None, weight = None, bias = None, learn_rate = None):
         last_out_size = self.last_out_size
         self.last_out_size = out_size
         self.layers.append(
@@ -37,7 +38,7 @@ class NN:
                 out_size,
                 weight = weight,
                 bias = bias,
-                learn_rate = self.learn_rate or None
+                learn_rate = learn_rate or self.learn_rate or None
             )
         )
         self.layers.append(
@@ -62,137 +63,126 @@ class NN:
             ans = self.layers[-1 - i].bp(propagated)
             propagated = ans
     def loss(self, predicted, expected):
-        return self.loss_func.fp(predicted, np.array(expected))
+        loss = self.loss_func.fp(predicted, np.array(expected))
+        return np.sum(loss) / loss.size
 
-def softmaxtest():
-    def test(inp):
-        axs = inp.ndim - 1
-        mx = np.max(inp, axis=axs)
-        print(inp)
-        print(mx)
-        di = np.exp(inp.T - mx)
-        print(di)
-        s = np.sum(di, axis=0)
-        print(s)
-        print((di / s).T)
-    inp = np.array([
-        [.1,.2,.3],
-        [.5,.3,.2],
-    ])
-    test(inp)
-    inp = np.array([.1,.2,.3])
-    test(inp)
-    
-def testacts():
-    prp = np.array([
-        [1.,2.,3.],
-        [2.5,1.5,0.5],
-        [.5,.2,.3],
-    ])
-    inp = np.array([
-        [.1,.2,.3],
-        [.5,.3,.2],
-        [-0.1,0,1.1],
-    ])
-    acts = Activator.funcs()
-    print(inp)
-    print(prp)
-    for f in acts:
-        print('testing', f)
-        act = Activator.create(f)
-        print(act.fp(inp))
-        print(act.bp(1))
-        print(act.bp(prp))
 
-def testloss_tmp(predict, expect):
-    funcs = Loss.funcs()
-    print('test loss for')
-    print('predict',predict)
-    print('expect',expect)
-    for f in funcs:
-        l = Loss.create(f)
-        print('test', f)
-        print(l.fp(predict,expect))
-        print(l.bp(predict,expect))
+class Data:
+    def __init__(
+            self,
+            inp,
+            out,
+        ):
+        inp = np.array(inp)
+        out = np.array(out)
+        if(inp.ndim == 1):
+            self.inp = np.array([inp])
+            self.out = np.array([out])
+        else:
+            self.inp = np.array(inp)
+            self.out = np.array(out)
+        if(self.inp.shape[0] != self.out.shape[0]):
+            raise Exception('input size and out size does not match')
+        self.in_size = self.inp.shape[1]
+        self.out_size = self.out.shape[1]
 
-def testloss1():
-    ps = [
-        [0.2,.3,0.4],
-        [1.,0.,0.],
-    ]
-    es = [
-        [1.,0.,0.],
-        [1.,0.,0.],
-    ]
-    for i in range(len(ps)):
-        testloss_tmp(np.array(ps[i]), np.array(es[i]))
+# classification => bunrui
+# regression => caiki
+class QuestionType:
+    @classmethod
+    def setting(cls, ques):
+        if(ques in [ 'class', 'classification']):
+            return {'out_func': 'softmax', 'loss': 'cross'}
+        elif(ques in ['reg', 'regres', 'regression']):
+            return {'out_func': 'id', 'loss': 'square'}
+        return {'out_func': None, 'loss': None}
 
-def testloss():
-    predict = np.array(
-        [
-            [0.2,.3,0.4],
-            [1.,0.,0.],
+class LeaningMachine:
+    def __init__(
+            self,
+            *,
+            question = 'regression',
+            out_func = None,
+            loss = None,
+            func = 'relu',
+            learn_rate = 0.2,
+            weight = None,
+            bias = None,
+            iteration = 1000,
+        ):
+        question_setting = QuestionType.setting(question)
+        self.out_func = out_func or question_setting['out_func'] or 'id'
+        self.loss = out_func or question_setting['loss'] or 'square'
+        self.iteration = iteration
+        #default values
+        self.learn_rate = learn_rate
+        self.func = func
+        self.weight = weight
+        self.bias = bias
+        self.layer_settings = []
+        self.answer_history = []
+        self.loss_history = []
+        self.nn = None
+    def add_layer(self,
+            *args,
+            **kwargs,
+        ):
+        keys = [
+            'learn_rate',
+            'weight',
+            'bias',
+            'func',
         ]
-    )
-    expect = np.array(
-        [
-            [1.,0.,0.],
-            [1.,0.,0.],
-        ]
-    )
-    testloss_tmp(predict,expect)
-
-def affinetest():
-    def test(mdl, inp, prp):
-        print('inp')
-        print(inp)
-        print('prp')
-        print(prp)
-        print('---fp---')
-        print(mdl.fp(inp))
-        print('---bp---')
-        print(mdl.bp(prp))
-        print('---learned weight---')
-        print(mdl.weight)
-    inps = [
-        [.1,.5,.8],
-        [0,0,1],
-        [
-            [.1,.5,.8],
-            [0,0,1],
-        ],
-    ]
-    prps = [
-        [.5, -0.5,],
-        [1,-1,],
-        [
-            [.5, -0.5,],
-            [1,-1,]
-        ],
-    ]
-    weight = np.array([
-        [1, 0.5,],
-        [0.2, 0.3,],
-        [0.3, 0.1,],
-    ])
-    bias = np.array([10, 0])
-    print('---weight---')
-    print(weight)
-    print('---bias---')
-    print(bias)
-    print()
-    print('///tests///')
-    print()
-    for i in range(len(inps)):
-        inp = np.array(inps[i])
-        prp = np.array(prps[i])
-        size = inp.shape[inp.ndim - 1]
-        l = Layer.create('affine', size, size, weight = weight, bias = bias)
-        test(l, inp, prp)
-        print()
+        for k in keys:
+            kwargs[k] = kwargs.get(k) or getattr(self, k, None)
+        self.layer_settings.append({'args': args, 'kwargs': kwargs})
+    def init_nn(self, inp, out, **kwargs):
+        if(self.nn is not None):
+            return
+        self.data = Data(inp, out)
+        kwargs['out_func'] = kwargs.get('out_func') or self.out_func
+        kwargs['loss'] = kwargs.get('loss') or self.loss
+        self.nn = NN(
+            self.data.in_size,
+            **kwargs
+        )
+        for setting in self.layer_settings:
+            args = setting['args']
+            kwargs = setting['kwargs']
+            self.nn.add_layer(*args, **kwargs)
+    def should_finish(self):
+        return False
+    def learn(
+            self,
+            inp,
+            out,
+            *,
+            descriptor = None,
+            **kwargs,
+        ):
+        self.init_nn(inp, out, **kwargs)
+        inp = self.data.inp
+        out = self.data.out
+        for i in range(self.iteration):
+            ans = self.nn.fp(inp)
+            loss = self.nn.loss(ans, out)
+            self.answer_history.append(ans)
+            self.loss_history.append(loss)
+            self.nn.bp(ans, out)
+            if(self.should_finish()):
+                break
+        if(descriptor is None):
+            descriptor = Descriptor.create()
+        descriptor.descript(
+            inp,
+            out,
+            self.answer_history,
+            self.loss_history
+        )
+        return self.loss_history[-1]
 
 def demo():
-    n = NN(2, func = 'tanh', loss = 'cross', out_func='softmax', learn_rate = 0.5)
+    n = NN(2, func = 'tanh', loss = 'cross', out_func='softmax', learn_rate = 0.2)
     n.add_layer('affine', 2)
     n.add_layer('affine', 3)
     inp = [0.2, 0.5]
@@ -203,3 +193,17 @@ def demo():
         print('predict', ans)
         print('loss', n.loss(ans, test))
         n.bp(ans, test)
+
+def lm_test():
+    inp = [
+        [.2, .3,.4],
+        [.5, .0, .1],
+    ]
+    out = [
+        [.8,.4],
+        [.1,.9],
+    ]
+    lm = LeaningMachine(func = 'relu', learn_rate = 0.1)
+    lm.add_layer('affine', 3)
+    lm.add_layer('affine', 2)
+    lm.learn(inp, out)
