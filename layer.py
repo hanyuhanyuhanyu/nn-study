@@ -12,9 +12,9 @@ class Layer:
             **kargs,
         ):
         if layer == 'id':
-            return Id(in_size, out_size, *args)
+            return Id(in_size, out_size, *args, **kargs)
         elif layer == 'affine':
-            return Affine(in_size, out_size, *args)
+            return Affine(in_size, out_size, *args, **kargs)
         return Id(in_size, out_size)
 
 class Id:
@@ -24,8 +24,6 @@ class Id:
         return x
     def bp(self, propagated): #back propagation
         return propagated
-    def update(self, propagated): # update weight of him self
-        pass
     def num_diff_func(self):
         return self.fp
     def num_diff(self, inp):
@@ -46,36 +44,41 @@ class Affine(Id):
         self.last_inp = None
         self.last_weight = None
         if(weight is None):
-            self.weight = np.random.rand(self.out_size, self.in_size)
+            self.weight = np.random.rand(self.in_size, self.out_size)
         else:
-            self.weight = np.array(initial_weight)
+            self.weight = np.array(weight)
         if(bias is None):
             self.bias = np.random.rand(self.out_size)
         else:
-            self.bias = np.array(initial_bias)
+            self.bias = np.array(bias)
     def fp(self, x):
-        self.last_result = x @ self.weight.T + self.bias
+        self.last_result = x @ self.weight + self.bias
         self.last_inp = x
         self.last_weight = self.weight
         return self.last_result
     def bp(self, prp):
         self.last_weight = self.weight
-        diff = self.last_inp.reshape(self.last_inp.shape[0], 1) @ prp.reshape(1, prp.shape[0])
-        self.weight = self.weight - diff.T * self.learn_rate
-        return prp @ self.weight
-
+        ip = self.last_inp
+        pr = prp
+        if(prp.ndim == 1): 
+            ip = np.array([ip])
+            pr = np.array([pr])
+        ip = ip.T
+        diff = ip @ pr
+        self.weight = self.weight - diff * self.learn_rate
+        return prp @ self.last_weight.T
     def num_diff_func(self):
         pass
     def num_diff(self, inp):
         copied = deepcopy(self.last_weight)
-        calced = self.last_inp @ copied.T + self.bias
+        calced = self.last_inp @ copied + self.bias
         ret = []
         for i in range(copied.shape[0]):
             each = []
             for j in range(copied.shape[1]):
                 copied[i][j] += h
-                calced = self.last_inp @ copied.T + self.bias
+                calced = self.last_inp @ copied + self.bias
                 each.append(((calced - self.last_result) / h)[i])
                 copied[i][j] -= h
             ret.append(each)
-        return np.array(ret).T @ inp
+        return np.array(ret) @ inp

@@ -9,6 +9,13 @@ class Loss:
         elif func == 'cross':
             return Cross()
         return Id()
+    @classmethod
+    def funcs(_):
+        return[
+            'id',
+            'cross',
+            'square'
+        ]
 
 class Id:
     def __init__(self, *args, **kargs):
@@ -22,12 +29,14 @@ class Id:
 
 class Cross(Id):
     def fp(self, pre, exp):
-        return -np.sum(exp * np.log(np.clip(pre, 1e-7, None)))
+        axs = pre.ndim - 1
+        return -np.sum(exp * np.log(np.clip(pre, 1e-7, None)), axis = axs)
     def bp(self, pre, exp):
-        return -exp / pre
+        return -exp / np.clip(pre, 1e-7, None)
 
 class Square(Id):
     def fp(self, pre, exp):
-        return np.sum((pre - exp) ** 2) / 2
+        axs = pre.ndim - 1
+        return np.sum((pre - exp) ** 2, axis = axs) / 2
     def bp(self, pre, exp):
         return pre - exp
