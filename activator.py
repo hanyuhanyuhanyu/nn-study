@@ -1,4 +1,5 @@
 import numpy as np
+import copy
 from .num_diff import num_diff
 
 class Activator: 
@@ -8,6 +9,7 @@ class Activator:
             'id',
             'sigmoid',
             'relu',
+            'leaky_relu',
             'softplus',
             'softmax',
             'tanh',
@@ -15,13 +17,18 @@ class Activator:
         ]
 
     @classmethod
-    def create(self, func):
+    def create(self, func, **kwargs):
+        #そもそも活性化関数が渡されているならそれを返す
+        if(issubclass(func.__class__, Id)):
+            return copy.deepcopy(func)
         if func == 'tanh':
             return Tanh()
         elif func == 'hardtanh':
             return HardTanh()
         elif func == 'relu':
-            return Relu()
+            return LeakyRelu()
+        elif func == 'leaky_relu':
+            return LeakyRelu(rate = kwargs['rate'])
         elif func == 'softplus':
             return Softplus()
         elif func == 'softmax':
@@ -93,10 +100,15 @@ class HardTanh(Id):
         x = self.last_inp
         return prp * (np.array((x > 0) * (x < 1)).astype(np.int))
 
-class Relu(Id):
+class LeakyRelu(Id):
+    def __init__(self, *, rate = 0): #rate = 0ならただのrelu
+        self.rate = rate
     def fp(self, x):
         self.last_inp = x
-        return np.maximum(0, x)
+        return np.maximum(self.rate * x, x)
     def bp(self, prp):
         x = self.last_inp
-        return prp * (np.array(x > 0).astype(np.int))
+        x[x > 0.] = 1
+        x[x <= 0.] = self.rate
+        return prp * x
+

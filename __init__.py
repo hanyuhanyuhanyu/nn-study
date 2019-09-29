@@ -28,7 +28,7 @@ class NN:
             )
         ]
         self.loss_func = Loss.create(loss)
-    def add_layer(self, layer, out_size, *, func = None, weight = None, bias = None, learn_rate = None):
+    def add_layer(self, layer, out_size, *, func = None, weight = None, bias = None, learn_rate = None, **kwargs):
         last_out_size = self.last_out_size
         self.last_out_size = out_size
         self.layers.append(
@@ -44,6 +44,7 @@ class NN:
         self.layers.append(
             Activator.create(
                 func or self.func,
+                **kwargs,
             )
         )
     def out_func(self):
@@ -150,6 +151,7 @@ class LeaningMachine:
             args = setting['args']
             kwargs = setting['kwargs']
             self.nn.add_layer(*args, **kwargs)
+
     def should_finish(self):
         return False
     def learn(
@@ -174,6 +176,7 @@ class LeaningMachine:
         if(descriptor is None):
             descriptor = Descriptor.create()
         descriptor.descript(
+            self.nn,
             inp,
             out,
             self.answer_history,
@@ -203,7 +206,8 @@ def lm_test():
         [.8,.4],
         [.1,.9],
     ]
-    lm = LeaningMachine(func = 'relu', learn_rate = 0.1)
+    act = Activator.create('leaky_relu', rate = 0.2)
+    lm = LeaningMachine(func = act, learn_rate = 0.1)
     lm.add_layer('affine', 3)
     lm.add_layer('affine', 2)
     lm.learn(inp, out)

@@ -10,7 +10,7 @@ class Id:
     def descript(*_, **__):
         return
 class Normal:
-    def descript(self, inp, out, answer_history, loss_history): 
+    def descript(self, nn_model, inp, out, answer_history, loss_history): 
         print('inp')
         print(inp)
         print('out')
