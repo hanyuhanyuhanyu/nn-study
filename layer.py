@@ -24,6 +24,8 @@ class Id:
         return x
     def bp(self, propagated): #back propagation
         return propagated
+    def update(self):
+        pass
     def num_diff_func(self):
         return self.fp
     def num_diff(self, inp):
@@ -43,6 +45,7 @@ class Affine(Id):
         self.learn_rate = learn_rate
         self.last_inp = None
         self.last_weight = None
+        self.learn_stack = []
         if(weight is None):
             self.weight = np.random.rand(self.in_size, self.out_size)
         else:
@@ -57,16 +60,16 @@ class Affine(Id):
         self.last_weight = self.weight
         return self.last_result
     def bp(self, prp):
-        self.last_weight = self.weight
         ip = self.last_inp
         pr = prp
         if(prp.ndim == 1): 
             ip = np.array([ip])
             pr = np.array([pr])
-        ip = ip.T
-        diff = ip @ pr
-        self.weight = self.weight - diff * self.learn_rate
+        self.learn_stack.append(ip.T @ pr)
         return prp @ self.last_weight.T
+    def update(self):
+        self.weight -= np.sum(np.array(self.learn_stack), axis = 0) * self.learn_rate
+        self.learn_stack = []
     def num_diff_func(self):
         pass
     def num_diff(self, inp):

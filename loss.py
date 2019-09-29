@@ -24,6 +24,8 @@ class Id:
         return predicted
     def bp(self, predicted, expected): #forward propagation
         return predicted
+    def update(self):
+        pass
     def num_diff(self, pre, exp):
         return error_num_diff(self.fp, pre, exp)
 

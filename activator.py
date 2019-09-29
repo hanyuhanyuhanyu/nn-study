@@ -46,6 +46,8 @@ class Id:
         return x
     def bp(self, propagated): #back propagation
         return propagated
+    def update(self):
+        pass
     def num_diff_func(self):
         return self.fp
     def num_diff(self, inp):
