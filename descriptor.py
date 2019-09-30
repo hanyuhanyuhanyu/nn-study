@@ -11,12 +11,12 @@ class Id:
         return
 class Normal:
     def descript(self, nn_model, inp, out, answer_history, loss_history): 
-        print('inp')
-        print(inp)
-        print('out')
-        print(out)
-        print('last answer')
-        print(answer_history[-1])
+        # print('inp')
+        # print(inp)
+        # print('out')
+        # print(out)
+        # print('last answer')
+        # print(answer_history[-1])
         print('last loss', loss_history[-1])
         x = range(len(loss_history))
         plt.figure()
@@ -26,5 +26,5 @@ class Normal:
         plt.show()
         for i in x:
             print('---', 1 + i ,'---')
-            print(answer_history[i])
+            # print(answer_history[i])
             print(loss_history[i])

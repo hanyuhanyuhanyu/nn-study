@@ -7,6 +7,7 @@ from .neural_network import NN
 from .data import Data
 from .question_type import QuestionType
 from .mini_batch_strategy import MiniBatchStrategy
+from .test_data import test_data
 
 class LeaningMachine:
     def __init__(
@@ -100,16 +101,13 @@ class LeaningMachine:
         return self.loss_history[-1]
 
 def lm_test():
-    inp = [
-        [.2, .3,.4],
-        [.5, .0, .1],
-    ]
-    out = [
-        [.8,.4],
-        [.1,.9],
-    ]
-    act = Activator.create('leaky_relu', rate = 0.2)
-    lm = LeaningMachine(func = act, learn_rate = 0.1)
-    lm.add_layer('affine', 3)
+    d = test_data()
+    inp = d["inp"]
+    out = d["out"]
+    mini_batch_strategy = MiniBatchStrategy.create('flat', blocks = 20)
+    lm = LeaningMachine(func = 'sigmoid', learn_rate = 0.05, mini_batch_strategy = mini_batch_strategy)
+    lm.add_layer('affine', 10)
+    lm.add_layer('affine', 7)
+    lm.add_layer('affine', 5)
     lm.add_layer('affine', 2)
     lm.learn(inp, out)

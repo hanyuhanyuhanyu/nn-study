@@ -20,10 +20,6 @@ class Data:
         self.in_size = self.inp.shape[1]
         self.out_size = self.out.shape[1]
     def shuffle(self):
-        inps = []
-        outs = []
-        for i in np.random.permutation(np.array(range(len(self.inp)))):
-            inps.append(self.inp[i])
-            outs.append(self.out[i])
-        self.inp = np.array(inps)
-        self.out = np.array(outs)
+        inds = np.random.permutation(self.inp.shape[0])
+        self.inp = self.inp[inds]
+        self.out = self.out[inds]

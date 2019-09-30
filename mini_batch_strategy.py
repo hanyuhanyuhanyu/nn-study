@@ -3,6 +3,8 @@ from .data import Data
 class MiniBatchStrategy:
     @classmethod
     def create(cls, kind = None, **kwargs):
+        if(issubclass(kind.__class__, Batch)):
+            return kind
         if(kind == 'flat'):
             blocks = kwargs.get('blocks')
             return Flat(blocks = blocks)
