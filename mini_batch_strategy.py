@@ -8,7 +8,7 @@ class MiniBatchStrategy:
         if(kind == 'flat'):
             blocks = kwargs.get('blocks')
             return Flat(blocks = blocks)
-        return MiniBatchStrategy()
+        return Batch()
     def __init__(self):
         pass
 

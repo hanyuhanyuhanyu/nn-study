@@ -47,11 +47,11 @@ class Affine(Id):
         self.last_weight = None
         self.learn_stack = []
         if(weight is None):
-            self.weight = np.random.rand(self.in_size, self.out_size)
+            self.weight = np.random.rand(self.in_size, self.out_size) * 2. - 1.
         else:
             self.weight = np.array(weight)
         if(bias is None):
-            self.bias = np.random.rand(self.out_size)
+            self.bias = np.random.rand(self.out_size) * 2. - 1.
         else:
             self.bias = np.array(bias)
     def fp(self, x):

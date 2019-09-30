@@ -5,18 +5,21 @@ class Descriptor:
     def create(cls, kind = None):
         if(kind == 'none'):
             return Id()
+        elif(kind == 'sample'):
+            return Sample()
         return Normal()
 class Id:
     def descript(*_, **__):
         return
 class Normal:
-    def descript(self, nn_model, inp, out, answer_history, loss_history): 
-        # print('inp')
-        # print(inp)
-        # print('out')
-        # print(out)
-        # print('last answer')
-        # print(answer_history[-1])
+    def descript(self, nn_model, datas, answer_history, loss_history): 
+        sample = datas.sample()
+        inp = sample['inp']
+        out = sample['out']
+        print('inp')
+        print(inp)
+        print('out')
+        print(out)
         print('last loss', loss_history[-1])
         x = range(len(loss_history))
         plt.figure()
@@ -24,7 +27,13 @@ class Normal:
         plt.xlabel('iteration count')
         plt.ylabel('loss rate')
         plt.show()
-        for i in x:
-            print('---', 1 + i ,'---')
-            # print(answer_history[i])
-            print(loss_history[i])
+
+class Sample:
+    def descript(self, nn_model, datas, answer_history, loss_history): 
+        print(nn_model.default_func())
+        x = range(len(loss_history))
+        plt.figure()
+        plt.plot(x, loss_history)
+        plt.xlabel('iteration count')
+        plt.ylabel('loss rate')
+        plt.show()

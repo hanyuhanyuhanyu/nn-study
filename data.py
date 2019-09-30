@@ -23,3 +23,6 @@ class Data:
         inds = np.random.permutation(self.inp.shape[0])
         self.inp = self.inp[inds]
         self.out = self.out[inds]
+    def sample(self, num = 5):
+        inds = np.random.choice(self.inp.shape[0], num, False)
+        return {'inp': self.inp[inds], 'out': self.out[inds]}

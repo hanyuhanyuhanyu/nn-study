@@ -7,7 +7,7 @@ from .neural_network import NN
 from .data import Data
 from .question_type import QuestionType
 from .mini_batch_strategy import MiniBatchStrategy
-from .test_data import test_data
+from .test_data import * 
 
 class LeaningMachine:
     def __init__(
@@ -21,6 +21,7 @@ class LeaningMachine:
             weight = None,
             bias = None,
             iteration = 1000,
+            descriptor = descriptor,
             mini_batch_strategy = 'flat',
         ):
         question_setting = QuestionType.setting(question)
@@ -29,6 +30,7 @@ class LeaningMachine:
         self.iteration = iteration
         #default values
         self.learn_rate = learn_rate
+        self.descriptor = descriptor
         self.func = func
         self.weight = weight
         self.bias = bias
@@ -39,6 +41,10 @@ class LeaningMachine:
         #history
         self.answer_history = []
         self.loss_history = []
+    def default_func(self):
+        if(type(self.func) is str):
+            return self.func
+        return self.func.__class__.__name__
     def add_layer(self,
             *args,
             **kwargs,
@@ -89,25 +95,51 @@ class LeaningMachine:
                 self.loss_history.append(loss)
                 self.nn.bp(ans, out)
             self.nn.update()
-        if(descriptor is None):
-            descriptor = Descriptor.create()
+        descriptor = Descriptor.create(descriptor or self.descriptor)
         descriptor.descript(
-            self.nn,
-            inp,
-            out,
+            self,
+            self.data,
             self.answer_history,
             self.loss_history
         )
         return self.loss_history[-1]
+
+def lm_sample():
+    inp = [
+        [.1,.2,.3],
+        [.5,.0,.9],
+        [.4,.1,.8],
+    ]
+    out = [
+        [.2,.5],
+        [.8,.3],
+        [.4,.9],
+    ]
+    for func in Activator.list_up():
+        lm = LeaningMachine(func = func, learn_rate = 0.2, descriptor = 'sample', mini_batch_strategy = None)
+        lm.add_layer('affine', 3)
+        lm.add_layer('affine', 2)
+        lm.learn(inp, out)
 
 def lm_test():
     d = test_data()
     inp = d["inp"]
     out = d["out"]
     mini_batch_strategy = MiniBatchStrategy.create('flat', blocks = 20)
-    lm = LeaningMachine(func = 'sigmoid', learn_rate = 0.05, mini_batch_strategy = mini_batch_strategy)
+    lm = LeaningMachine(func = 'sigmoid', learn_rate = 0.01, mini_batch_strategy = mini_batch_strategy)
     lm.add_layer('affine', 10)
     lm.add_layer('affine', 7)
     lm.add_layer('affine', 5)
     lm.add_layer('affine', 2)
+    lm.learn(inp, out)
+def lm_sin():
+    d = test_sin()
+    inp = d["inp"]
+    out = d["out"]
+    mini_batch_strategy = MiniBatchStrategy.create('flat', blocks = 20)
+    lm = LeaningMachine(func = 'tanh', learn_rate = 0.05, mini_batch_strategy = mini_batch_strategy)
+    lm.add_layer('affine', 10, func = 'sigmoid')
+    lm.add_layer('affine', 7, func = 'relu')
+    lm.add_layer('affine', 5)
+    lm.add_layer('affine', 1)
     lm.learn(inp, out)

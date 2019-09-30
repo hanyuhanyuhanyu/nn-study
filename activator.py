@@ -17,7 +17,7 @@ class Activator:
         ]
 
     @classmethod
-    def create(self, func, **kwargs):
+    def create(self, func, *args, **kwargs):
         #そもそも活性化関数が渡されているならそれを返す
         if(issubclass(func.__class__, Id)):
             return copy.deepcopy(func)
@@ -26,7 +26,7 @@ class Activator:
         elif func == 'hardtanh':
             return HardTanh()
         elif func == 'relu':
-            return LeakyRelu()
+            return Relu()
         elif func == 'leaky_relu':
             return LeakyRelu(rate = kwargs['rate'])
         elif func == 'softplus':
@@ -36,6 +36,20 @@ class Activator:
         elif func == 'sigmoid':
             return Sigmoid()
         return Id()
+    @classmethod
+    def list_up(cls):
+        args = {}
+        kwargs = {
+            'leaky_relu': {
+                'rate': 0.3
+            }
+        }
+        funcs = []
+        for f in cls.funcs():
+            arg = args.get(f) or []
+            karg = kwargs.get(f) or {}
+            funcs.append(cls.create(f, *args, **karg))
+        return funcs
 
 class Id:
     def __init__(self, *args, **kargs):
@@ -113,4 +127,8 @@ class LeakyRelu(Id):
         x[x > 0.] = 1
         x[x <= 0.] = self.rate
         return prp * x
+class Relu(LeakyRelu):
+    def __init__(self):
+        super(LeakyRelu, self)
+        self.rate = 0
 
