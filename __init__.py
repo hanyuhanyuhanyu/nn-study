@@ -4,36 +4,9 @@ from .activator import Activator
 from .loss import Loss
 from .descriptor import Descriptor
 from .neural_network import NN
-
-class Data:
-    def __init__(
-            self,
-            inp,
-            out,
-        ):
-        inp = np.array(inp)
-        out = np.array(out)
-        if(inp.ndim == 1):
-            self.inp = np.array([inp])
-            self.out = np.array([out])
-        else:
-            self.inp = np.array(inp)
-            self.out = np.array(out)
-        if(self.inp.shape[0] != self.out.shape[0]):
-            raise Exception('input size and out size does not match')
-        self.in_size = self.inp.shape[1]
-        self.out_size = self.out.shape[1]
-
-# classification => bunrui
-# regression => caiki
-class QuestionType:
-    @classmethod
-    def setting(cls, ques):
-        if(ques in [ 'class', 'classification']):
-            return {'out_func': 'softmax', 'loss': 'cross'}
-        elif(ques in ['reg', 'regres', 'regression']):
-            return {'out_func': 'id', 'loss': 'square'}
-        return {'out_func': None, 'loss': None}
+from .data import Data
+from .question_type import QuestionType
+from .mini_batch_strategy import MiniBatchStrategy
 
 class LeaningMachine:
     def __init__(
@@ -47,6 +20,7 @@ class LeaningMachine:
             weight = None,
             bias = None,
             iteration = 1000,
+            mini_batch_strategy = 'flat',
         ):
         question_setting = QuestionType.setting(question)
         self.out_func = out_func or question_setting['out_func'] or 'id'
@@ -57,10 +31,13 @@ class LeaningMachine:
         self.func = func
         self.weight = weight
         self.bias = bias
+        #settings
         self.layer_settings = []
+        self.mini_batch_strategy = MiniBatchStrategy.create(mini_batch_strategy)
+        self.nn = None
+        #history
         self.answer_history = []
         self.loss_history = []
-        self.nn = None
     def add_layer(self,
             *args,
             **kwargs,
@@ -100,17 +77,17 @@ class LeaningMachine:
             **kwargs,
         ):
         self.init_nn(inp, out, **kwargs)
-        inp = self.data.inp
-        out = self.data.out
         for i in range(self.iteration):
-            ans = self.nn.fp(inp)
-            loss = self.nn.loss(ans, out)
-            self.answer_history.append(ans)
-            self.loss_history.append(loss)
-            self.nn.bp(ans, out)
+            epoch = self.mini_batch_strategy.make_epoch(self.data)
+            for d in epoch:
+                inp = d.inp
+                out = d.out
+                ans = self.nn.fp(inp)
+                loss = self.nn.loss(ans, out)
+                self.answer_history.append(ans)
+                self.loss_history.append(loss)
+                self.nn.bp(ans, out)
             self.nn.update()
-            if(self.should_finish()):
-                break
         if(descriptor is None):
             descriptor = Descriptor.create()
         descriptor.descript(
