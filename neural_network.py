@@ -13,6 +13,7 @@ class NN:
             out_func = 'id',
             func = 'tanh',
             learn_rate = 0.1,
+            update_strategy = None
         ):
         self.in_size = in_size
         self.last_out_size = in_size
@@ -20,6 +21,7 @@ class NN:
         self.out_func_layer = None
         self.learn_rate = learn_rate
         self.func = func
+        self.update_strategy = update_strategy
         self.layers = [
             Layer.create(
                 'id',
@@ -28,7 +30,16 @@ class NN:
             )
         ]
         self.loss_func = Loss.create(loss)
-    def add_layer(self, layer, out_size, *, func = None, weight = None, bias = None, learn_rate = None, **kwargs):
+    def add_layer(self,
+            layer,
+            out_size,
+            *,
+            func = None,
+            weight = None,
+            bias = None,
+            learn_rate = None,
+            update_strategy = None,
+            **kwargs):
         last_out_size = self.last_out_size
         self.last_out_size = out_size
         self.layers.append(
@@ -38,7 +49,9 @@ class NN:
                 out_size,
                 weight = weight,
                 bias = bias,
-                learn_rate = learn_rate or self.learn_rate or None
+                learn_rate = learn_rate or self.learn_rate or None,
+                update_strategy = update_strategy or self.update_strategy,
+                **kwargs,
             )
         )
         self.layers.append(

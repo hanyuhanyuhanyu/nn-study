@@ -46,6 +46,8 @@ class Activator:
         }
         funcs = []
         for f in cls.funcs():
+            if(f in ['softmax']):
+                continue
             arg = args.get(f) or []
             karg = kwargs.get(f) or {}
             funcs.append(cls.create(f, *args, **karg))

@@ -1,6 +1,7 @@
 import numpy as np
 from copy import deepcopy
 from .num_diff import num_diff, h
+from .update_strategy import UpdateStrategy
 
 class Layer:
     @classmethod
@@ -38,7 +39,8 @@ class Affine(Id):
             *,
             weight = None,
             bias = None,
-            learn_rate = 0.1
+            learn_rate = 0.1,
+            update_strategy = None,
         ):
         self.in_size = in_size
         self.out_size = out_size
@@ -46,6 +48,7 @@ class Affine(Id):
         self.last_inp = None
         self.last_weight = None
         self.learn_stack = []
+        self.update_strategy = UpdateStrategy.create(update_strategy)
         if(weight is None):
             self.weight = np.random.rand(self.in_size, self.out_size) * 2. - 1.
         else:
@@ -65,11 +68,10 @@ class Affine(Id):
         if(prp.ndim == 1): 
             ip = np.array([ip])
             pr = np.array([pr])
-        self.learn_stack.append(ip.T @ pr)
+        self.learn_stack.append(self.update_strategy.calc(self, prp))
         return prp @ self.last_weight.T
     def update(self):
-        self.weight -= np.sum(np.array(self.learn_stack), axis = 0) * self.learn_rate
-        self.learn_stack = []
+        self.weight += self.update_strategy.update(self)
     def num_diff_func(self):
         pass
     def num_diff(self, inp):
