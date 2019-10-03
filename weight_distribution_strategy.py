@@ -15,15 +15,12 @@ class WeightDitributionStrategy:
         return Uniform()
 class Uniform:
     def distribute(s, inp, out):
-        print('uniform')
         return np.random.rand(inp,out)*2.-1.
 
 class Xavier:
     def distribute(s, inp, out):
-        print('xavier')
         return np.random.normal(0, np.sqrt(2 / (inp+out)), (inp, out))
 
 class He:
     def distribute(s, inp, out):
-        print('he')
         return np.random.normal(0, np.sqrt(2 / inp), (inp, out))
