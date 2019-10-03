@@ -13,7 +13,8 @@ class NN:
             out_func = 'id',
             func = 'tanh',
             learn_rate = 0.1,
-            update_strategy = None
+            update_strategy = None,
+            weight_distribution_strategy = None,
         ):
         self.in_size = in_size
         self.last_out_size = in_size
@@ -22,6 +23,7 @@ class NN:
         self.learn_rate = learn_rate
         self.func = func
         self.update_strategy = update_strategy
+        self.weight_distribution_strategy = weight_distribution_strategy
         self.layers = [
             Layer.create(
                 'id',
@@ -39,6 +41,7 @@ class NN:
             bias = None,
             learn_rate = None,
             update_strategy = None,
+            weight_distribution_strategy = None,
             **kwargs):
         last_out_size = self.last_out_size
         self.last_out_size = out_size
@@ -51,6 +54,7 @@ class NN:
                 bias = bias,
                 learn_rate = learn_rate or self.learn_rate or None,
                 update_strategy = update_strategy or self.update_strategy,
+                weight_distribution_strategy = weight_distribution_strategy or func or self.weight_distribution_strategy or self.func
                 **kwargs,
             )
         )

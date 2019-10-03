@@ -2,6 +2,7 @@ import numpy as np
 from copy import deepcopy
 from .num_diff import num_diff, h
 from .update_strategy import UpdateStrategy
+from .weight_distribution_strategy import WeightDitributionStrategy
 
 class Layer:
     @classmethod
@@ -41,6 +42,7 @@ class Affine(Id):
             bias = None,
             learn_rate = 0.1,
             update_strategy = None,
+            weight_distribution_strategy = None,
         ):
         self.in_size = in_size
         self.out_size = out_size
@@ -49,8 +51,9 @@ class Affine(Id):
         self.last_weight = None
         self.learn_stack = []
         self.update_strategy = UpdateStrategy.create(update_strategy)
+        self.weight_distribution_strategy = weight_distribution_strategy
         if(weight is None):
-            self.weight = np.random.rand(self.in_size, self.out_size) * 2. - 1.
+            self.weight = WeightDitributionStrategy.create(self.weight_distribution_strategy).distribute(self.in_size, self.out_size)
         else:
             self.weight = np.array(weight)
         if(bias is None):

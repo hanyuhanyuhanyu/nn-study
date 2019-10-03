@@ -24,6 +24,7 @@ class LearningMachine:
             descriptor = None,
             mini_batch_strategy = 'flat',
             update_strategy = None,
+            weight_distribution_strategy = None,
         ):
         question_setting = QuestionType.setting(question)
         self.out_func = out_func or question_setting['out_func'] or 'id'
@@ -39,6 +40,7 @@ class LearningMachine:
         self.layer_settings = []
         self.mini_batch_strategy = MiniBatchStrategy.create(mini_batch_strategy)
         self.update_strategy = update_strategy
+        self.weight_distribution_strategy = weight_distribution_strategy
         self.nn = None
         #history
         self.answer_history = []
@@ -72,6 +74,7 @@ class LearningMachine:
             'out_func',
             'loss',
             'update_strategy',
+            'weight_distribution_strategy',
         ]
         for setting in settings:
             kwargs[setting] = kwargs.get(setting) or getattr(self, setting)

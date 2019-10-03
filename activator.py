@@ -14,6 +14,7 @@ class Activator:
             'softmax',
             'tanh',
             'hardtanh',
+            'softtanh',
         ]
 
     @classmethod
@@ -29,6 +30,8 @@ class Activator:
             return Relu()
         elif func == 'leaky_relu':
             return LeakyRelu(rate = kwargs['rate'])
+        elif func == 'softtanh':
+            return SoftTanh(rate = kwargs['rate'])
         elif func == 'softplus':
             return Softplus()
         elif func == 'softmax':
@@ -41,7 +44,10 @@ class Activator:
         args = {}
         kwargs = {
             'leaky_relu': {
-                'rate': 0.3
+                'rate': 0.1
+            },
+            'softtanh': {
+                'rate': 0.1
             }
         }
         funcs = []
@@ -64,6 +70,8 @@ class Id:
         return propagated
     def update(self):
         pass
+    def category(_):
+        return 'tanh'
     def num_diff_func(self):
         return self.fp
     def num_diff(self, inp):
@@ -79,6 +87,8 @@ class Softplus(Id):
         self.last_calc = 1 + np.exp(x)
         self.last_inp = x
         return np.log(self.last_calc)
+    def category(_):
+        return 'relu'
     def bp(self, prp):
         return prp / self.last_calc
 
@@ -91,6 +101,8 @@ class SoftMax(Id):
         return self.last_result
     def bp(self, prp):
         return prp * self.last_result * (1 - self.last_result)
+    def category(_):
+        return 'others'
 
 class Sigmoid(Id):
     def fp(self, x):
@@ -99,6 +111,8 @@ class Sigmoid(Id):
         return self.last_result
     def bp(self, prp):
         return prp * self.last_calc * (self.last_result ** 2)
+    def category(_):
+        return 'tanh'
 
 class Tanh(Id):
     def fp(self, x):
@@ -107,6 +121,8 @@ class Tanh(Id):
         return self.last_result
     def bp(self, prp):
         return prp * (1 - (self.last_result ** 2))
+    def category(_):
+        return 'tanh'
     def num_diff_func(self):
         return np.tanh
 
@@ -114,13 +130,31 @@ class HardTanh(Id):
     def fp(self, x):
         self.last_inp = x
         return np.maximum(0, np.minimum(1, x))
+    def category(_):
+        return 'relu'
     def bp(self, prp):
         x = self.last_inp
         return prp * (np.array((x > 0) * (x < 1)).astype(np.int))
 
+class SoftTanh(Id):
+    def __init__(self, *, rate = 0):
+        self.rate = rate
+    def fp(self, x, *, rate = 0):
+        self.last_inp = x
+        return np.maximum(self.rate * x, np.minimum(self.rate * x, x))
+    def category(_):
+        return 'relu'
+    def bp(self, prp):
+        x = self.last_inp
+        x[(x > 0.) & (x < 1.)] = 1
+        x[(x <= 0.) | (1 < x)] = self.rate
+        return prp * x
+
 class LeakyRelu(Id):
     def __init__(self, *, rate = 0): #rate = 0ならただのrelu
         self.rate = rate
+    def category(_):
+        return 'relu'
     def fp(self, x):
         self.last_inp = x
         return np.maximum(self.rate * x, x)
@@ -133,4 +167,6 @@ class Relu(LeakyRelu):
     def __init__(self):
         super(LeakyRelu, self)
         self.rate = 0
+    def category(_):
+        return 'relu'
 
