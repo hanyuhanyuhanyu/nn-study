@@ -16,7 +16,7 @@ class SettingCreator:
         self.layers = []
         self.closed = False
         self.default_node_num = round((self.inp + self.out) * 0.75)
-        self.default_update_strategy = self.create_default_update_strategy('rms')
+        self.set_default_update_strategy('momentum')
         self.use_batch_flag = True
         self.activator = 'tanh'
         self.loss = 'square'
@@ -24,6 +24,7 @@ class SettingCreator:
         self.mini_batch = {
             'epoch': 100
         }
+        self.created = None
     def add_layer(self,
             count = 1,
             **kwargs,
@@ -61,6 +62,8 @@ class SettingCreator:
         kwargs = dict(kwargs, out = self.out)
         self.add_layer(**kwargs)
         self.closed = True
+    def set_default_update_strategy(self, name, **kwargs):
+        self.default_update_strategy = self.create_default_update_strategy(name, **kwargs)
     def create_default_update_strategy(self, name, **kwargs):
         return {
             'name': name,
@@ -71,15 +74,28 @@ class SettingCreator:
             'epoch': self.epoch_count,
         }
     def create(self, inp, out):
+        if self.created is not None:
+            return self.created
         if(self.last_out != self.out):
             self.close()
-        return Setting(
+        if self.use_batch_flag:
+            self.layers.insert(0, 
+                {
+                    'name': 'batch_regulator',
+                    'setting': {
+                        'inp': self.inp,
+                        'update_strategy': self.default_update_strategy
+                    }
+                }
+            )
+        self.created = Setting(
             inp = inp,
             out = out,
             layers_setting = {'layers': self.layers},
             mini_batch_strategy_setting = self.create_mini_batch_setting(),
             loss_setting = self.loss,
         )
+        return self.created
     
 class Setting:
     @classmethod
@@ -93,8 +109,9 @@ class Setting:
             [-.3, 0.1,],
         ]
         settings = SettingCreator(3, 2)
-        settings.epoch_count = 1000
+        settings.epoch_count = 1500
         # settings.dont_use_batch_regulator()
+        settings.set_default_update_strategy('adagrad')
         settings.activator = 'tanh'
         settings.add_layer(1)
         settings.close()
