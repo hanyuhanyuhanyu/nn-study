@@ -3,13 +3,11 @@ import copy
 
 class UpdateStrategy:
     @classmethod
-    def create(cls, kind, **kwargs):
-        if(type(kind) is list):
-            return cls.create(kind[0], **kind[1])
+    def create(cls, kind, *_, **kwargs):
         if(issubclass(kind.__class__, Plain)):
             return copy.deepcopy(kind)
         if kind == 'momentum':
-            return lambda affine: -affine.learn_rate * np.sum(np.array(affine.fp_stack).T @ np.array(affine.bp_stack), axis = 1)
+            return Momentum(**kwargs)
         elif kind == 'adagrad':
             return Adagrad(**kwargs)
         elif kind in ["rmsprop", "rms"]:
@@ -163,4 +161,3 @@ class Adam(RMSProp):
 #         self.last_upd = upd
 #         self.learn_stack = []
 #         return self.last_moment
-
