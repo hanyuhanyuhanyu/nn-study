@@ -14,16 +14,21 @@ class Activator(Layer):
         if func == 'relu':
           return Relu()
         if func == 'leaky_relu':
-          return LeakyRelu(rate = kwargs['rate'])
+          return LeakyRelu(rate = kwargs.get('rate'))
         if func == 'softtanh':
-          return SoftTanh(rate = kwargs['rate'])
+          return SoftTanh(rate = kwargs.get('rate'))
         if func == 'softplus':
           return Softplus()
-        if func == 'softmax':
-          return SoftMax()
         if func == 'sigmoid':
             return Sigmoid()
         return Activator()
+    @classmethod
+    def initial_weight(cls, func_name):
+        if func_name in ['tanh', 'sigmoid']:
+            return 'xavier'
+        if func_name in ['hardtanh', 'relu', 'leaky_relu', 'softtanh', 'softplus', 'sigmoid']:
+            return 'he'
+        return 'uniform'
 
 class Softplus(Activator):
     def fp(self, x):
@@ -32,16 +37,6 @@ class Softplus(Activator):
         return np.log(self.last_calc)
     def bp(self, prp):
         return prp / self.last_calc
-
-class SoftMax(Activator):
-    def fp(self, x):
-        axs = x.ndim - 1
-        mx = np.max(x, axis = axs)
-        calc = np.exp(x.T - mx)
-        self.last_result = (calc / np.sum(calc, axis=0)).T
-        return self.last_result
-    def bp(self, prp):
-        return prp * self.last_result * (1 - self.last_result)
 
 class Sigmoid(Activator):
     def fp(self, x):
@@ -70,8 +65,8 @@ class HardTanh(Activator):
         return prp * (np.array((x > 0) * (x < 1)).astype(np.int))
 
 class SoftTanh(Activator):
-    def __init__(self, *, rate = 0):
-        self.rate = rate
+    def __init__(self, *, rate = None):
+        self.rate = rate or 0.1
     def fp(self, x):
         self.last_inp = x
         print(x)
@@ -84,8 +79,8 @@ class SoftTanh(Activator):
         return prp * x
 
 class LeakyRelu(Activator):
-    def __init__(self, *, rate = 0): #rate = 0ならただのrelu
-        self.rate = rate
+    def __init__(self, *, rate = None): #rate = 0ならただのrelu
+        self.rate = rate or 0.1
     def fp(self, x):
         self.last_inp = x
         return np.maximum(self.rate * x, x)

@@ -38,7 +38,7 @@ class AggregatedLayer(Layer):
 def create_learning_layer(
     *,
     affine = None,
-    batch_regulator = {},
+    batch_regulator = None,
     activator = None,
 ):
     settings = [

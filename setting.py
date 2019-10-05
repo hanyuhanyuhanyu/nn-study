@@ -1,95 +1,105 @@
+from .activator import Activator
 from .mini_batch_strategy import MiniBatchStrategy
 from .layer_factory import LayerFactory
 from .loss_function import LossFunction
 from .descriptor import Descriptor
+
+class SettingCreator:
+    def __init__(self,
+            inp_size,
+            out_size,
+            **kwargs,
+        ):
+        self.inp = inp_size
+        self.out = out_size
+        self.last_out = inp_size
+        self.layers = []
+        self.closed = False
+        self.default_node_num = round((self.inp + self.out) * 0.75)
+        self.default_update_strategy = self.create_default_update_strategy('rms')
+        self.use_batch_flag = True
+        self.activator = 'tanh'
+        self.loss = 'square'
+        self.epoch_count = 100
+        self.mini_batch = {
+            'epoch': 100
+        }
+    def add_layer(self,
+            count = 1,
+            **kwargs,
+        ):
+        for i in range(count):
+            self.layers.append(self.create_layer_default_setting(**kwargs))
+            self.last_out = kwargs.get('out') or self.default_node_num
+    def dont_use_batch_regulator(self):
+        self.use_batch_flag =  False
+    def create_layer_default_setting(self, **kwargs):
+        weight = Activator.initial_weight(self.activator)
+        out = kwargs.get('out') or self.default_node_num
+        batch_regulator = {
+            'inp': out,
+        }
+        if self.use_batch_flag is False:
+            batch_regulator = None
+        return {
+            'setting': {
+                'affine': {
+                    'inp': self.last_out,
+                    'out': out,
+                    'weight': weight,
+                    'update_strategy': self.default_update_strategy,
+                },
+                'activator': {
+                    'func': self.activator
+                },
+                'batch_regulator': batch_regulator
+            }
+        }
+    def close(self, **kwargs):
+        if self.closed:
+            return
+        kwargs = dict(kwargs, out = self.out)
+        self.add_layer(**kwargs)
+        self.closed = True
+    def create_default_update_strategy(self, name, **kwargs):
+        return {
+            'name': name,
+            'setting': kwargs,
+        }
+    def create_mini_batch_setting(self):
+        return {
+            'epoch': self.epoch_count,
+        }
+    def create(self, inp, out):
+        if(self.last_out != self.out):
+            self.close()
+        return Setting(
+            inp = inp,
+            out = out,
+            layers_setting = {'layers': self.layers},
+            mini_batch_strategy_setting = self.create_mini_batch_setting(),
+            loss_setting = self.loss,
+        )
+    
 class Setting:
     @classmethod
     def forTest(cls):
         inp = [
             [.1, .2, .3,],
-            [.5, .0, .4,],
+            [-.5, .0, .4,],
         ]
         out = [
-            [0, -.2,],
-            [.7, .1,],
+            [.5, .2,],
+            [-.3, 0.1,],
         ]
-        layers_setting = {
-            'layers': [
-                {
-                    'setting': {
-                        'affine': {
-                            'inp': 3,
-                            'out': 4,
-                            'weight': 'xavier',
-                            'update_strategy': {
-                                'name': 'momentum',
-                                'setting': {
-                                    'learn_rate': 0.1,
-                                },
-                            },
-                        },
-                        'activator': {
-                            'func': 'tanh',
-                        },
-                        'batch_regulator': {
-                            'inp': 4,
-                        },
-                    },
-                },
-                {
-                    'setting': {
-                        'affine': {
-                            'inp': 4,
-                            'out': 4,
-                            'weight': 'xavier',
-                            'update_strategy': {
-                                'name': 'momentum',
-                                'setting': {
-                                    'learn_rate': 0.1,
-                                    'epsilon': 0.2,
-                                    'attenuation_rate': 0.91,
-                                },
-                            },
-                        },
-                        'activator': {
-                            'func': 'tanh',
-                        },
-                        'batch_regulator': {
-                            'inp': 4,
-                        },
-                    },
-                },
-                {
-                    'setting': {
-                        'affine': {
-                            'inp': 4,
-                            'out': 2,
-                            'weight': 'xavier',
-                            'update_strategy': {
-                                'name': 'momentum',
-                                'setting': {
-                                    'learn_rate': 0.1,
-                                    'rate': 0.25,
-                                },
-                            },
-                        },
-                        'activator': {
-                            'func': 'tanh',
-                        },
-                        'batch_regulator': {
-                            'inp': 2,
-                        },
-                    },
-                },
-            ]
-        }
-        mini_batch_strategy_setting = {
-            'epoch': 300
-        }
-        return Setting(inp, out,
-            layers_setting = layers_setting,
-            mini_batch_strategy_setting = mini_batch_strategy_setting,
-        )
+        settings = SettingCreator(3, 2)
+        settings.epoch_count = 1000
+        # settings.dont_use_batch_regulator()
+        settings.activator = 'tanh'
+        settings.add_layer(1)
+        settings.close()
+        loss_setting = None
+        return settings.create(inp, out)
 
     def __init__(self, inp, out, **kwargs):
         self.inp = inp
@@ -98,8 +108,8 @@ class Setting:
         # こいつらは基本public
         self.mini_batch_strategy_setting = kwargs.get('mini_batch_strategy_setting')
         self.layers_setting = kwargs.get('layers_setting')
+        self.loss_setting = kwargs.get('loss_setting')
         self.layer_default = None
-        self.loss_setting = None
         self.descriptor_setting = None
     def create_mini_batch(self):
         return MiniBatchStrategy.create(self.inp, self.out, self.mini_batch_strategy_setting)
