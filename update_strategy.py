@@ -38,8 +38,8 @@ class UpdateStrategy:
         self.initialize()
     def initialize(self):
         self.learn_stack = []
-    def calc(self, inp, prp):
-        self.learn_stack.append(inp.T @ prp)
+    def calc(self, diff):
+        self.learn_stack.append(diff)
     def update(self):
         upd = -self.learn_rate * np.sum(np.array(self.learn_stack), axis = 0)
         self.initialize()
@@ -47,7 +47,7 @@ class UpdateStrategy:
 
 class Momentum(UpdateStrategy):
     #rateはモーメンタム係数momentum coefficientのことだが名前が長すぎるので
-    def __init__(self, *, learn_rate = 0.0125, rate = None):
+    def __init__(self, *, learn_rate = 0.0125, rate = None, **kwargs):
         self.initialize()
         self.last_moment = None
         self.learn_rate = learn_rate
@@ -64,7 +64,8 @@ class RMSProp(UpdateStrategy):
             *,
             learn_rate = 0.0125,
             epsilon = 0.1,
-            attenuation_rate = 0.9 #減衰率
+            attenuation_rate = 0.9, #減衰率
+            **kwargs,
         ):
         self.initialize()
         self.last_ada = 0
@@ -76,8 +77,7 @@ class RMSProp(UpdateStrategy):
         self.ada_stack = []
     def calc_ada(self, diff):
         return self.attn * self.last_ada + (1 - self.attn) * diff ** 2
-    def calc(self, inp, prp):
-        diff = inp.T @ prp
+    def calc(self, diff):
         ada = self.calc_ada(diff)
         self.ada_stack.append(ada)
         self.learn_stack.append(diff / np.sqrt(self.epsilon + ada))
@@ -90,8 +90,7 @@ class RMSProp(UpdateStrategy):
 class Adagrad(RMSProp):
     def calc_ada(self,  diff):
         return self.last_ada + diff * diff
-    def calc(self, inp, prp):
-        diff = inp.T @ prp
+    def calc(self, diff):
         ada = self.calc_ada(diff)
         self.ada_stack.append(ada)
         self.learn_stack.append(diff / (self.epsilon + np.sqrt(ada)))
@@ -107,8 +106,7 @@ class AdaDelta(RMSProp):
     def initialize(self):
         super(AdaDelta, self).initialize()
         self.diff_stack = []
-    def calc(self, inp, prp):
-        diff = inp.T @ prp
+    def calc(self, diff):
         ada = self.calc_ada(diff)
         update_diff = -diff * np.sqrt(self.epsilon + self.diff_mean) / np.sqrt(self.epsilon + ada)
         self.ada_stack.append(ada)
@@ -124,7 +122,8 @@ class Adam(RMSProp):
             *,
             learn_rate = 0.0125,
             epsilon = 0.1,
-            attenuation_rate = 0.9 #減衰率
+            attenuation_rate = 0.9, #減衰率
+            **kwargs,
         ):
         self.initialize()
         self.learn_rate = learn_rate
@@ -136,8 +135,7 @@ class Adam(RMSProp):
     def initialize(self):
         self.moment_1_stack = []
         self.moment_2_stack = []
-    def calc(self, inp, prp):
-        diff = inp.T @ prp
+    def calc(self, diff):
         mom_1 = self.attn * self.moment_first + (1 - self.attn) * diff
         mom_2 = self.attn * self.moment_second + (1 - self.attn) * diff * diff
         self.moment_1_stack.append(mom_1)

@@ -6,8 +6,8 @@ class Setting:
     @classmethod
     def forTest(cls):
         inp = [
-            [.1, .2, -0.3,],
-            [.5, .0, -0.5,],
+            [.1, .2, .3,],
+            [.5, .0, .4,],
         ]
         out = [
             [0, -.2,],
@@ -22,7 +22,7 @@ class Setting:
                             'out': 4,
                             'weight': 'xavier',
                             'update_strategy': {
-                                'name': 'rms',
+                                'name': 'momentum',
                                 'setting': {
                                     'learn_rate': 0.1,
                                 },
@@ -30,6 +30,9 @@ class Setting:
                         },
                         'activator': {
                             'func': 'tanh',
+                        },
+                        'batch_regulator': {
+                            'inp': 4,
                         },
                     },
                 },
@@ -40,7 +43,7 @@ class Setting:
                             'out': 4,
                             'weight': 'xavier',
                             'update_strategy': {
-                                'name': 'adam',
+                                'name': 'momentum',
                                 'setting': {
                                     'learn_rate': 0.1,
                                     'epsilon': 0.2,
@@ -51,65 +54,8 @@ class Setting:
                         'activator': {
                             'func': 'tanh',
                         },
-                    },
-                },
-                {
-                    'setting': {
-                        'affine': {
+                        'batch_regulator': {
                             'inp': 4,
-                            'out': 4,
-                            'weight': 'xavier',
-                            'update_strategy': {
-                                'name': 'adadelta',
-                                'setting': {
-                                    'learn_rate': 0.1,
-                                    'epsilon': 0.2,
-                                    'attenuation_rate': 0.91,
-                                },
-                            },
-                        },
-                        'activator': {
-                            'func': 'tanh',
-                        },
-                    },
-                },
-                {
-                    'setting': {
-                        'affine': {
-                            'inp': 4,
-                            'out': 4,
-                            'weight': 'xavier',
-                            'update_strategy': {
-                                'name': 'adagrad',
-                                'setting': {
-                                    'learn_rate': 0.1,
-                                    'epsilon': 0.2,
-                                    'attenuation_rate': 0.91,
-                                },
-                            },
-                        },
-                        'activator': {
-                            'func': 'tanh',
-                        },
-                    },
-                },
-                {
-                    'setting': {
-                        'affine': {
-                            'inp': 4,
-                            'out': 4,
-                            'weight': 'xavier',
-                            'update_strategy': {
-                                'name': 'rms',
-                                'setting': {
-                                    'learn_rate': 0.1,
-                                    'epsilon': 0.2,
-                                    'attenuation_rate': 0.91,
-                                },
-                            },
-                        },
-                        'activator': {
-                            'func': 'tanh',
                         },
                     },
                 },
@@ -130,12 +76,15 @@ class Setting:
                         'activator': {
                             'func': 'tanh',
                         },
+                        'batch_regulator': {
+                            'inp': 2,
+                        },
                     },
                 },
             ]
         }
         mini_batch_strategy_setting = {
-            'epoch': 100
+            'epoch': 300
         }
         return Setting(inp, out,
             layers_setting = layers_setting,

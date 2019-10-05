@@ -1,5 +1,7 @@
 from .setting import Setting
+import time
 import numpy as np
+from .batch_regulator import BatchRegulator
 class LearningMachine:
     def __init__(self, setting):
         self.setting = setting
@@ -26,8 +28,12 @@ def test():
     LearningMachine(Setting.forTest()).learn()
 
 def exp():
-    inp = np.array([
-        [1,2,3],
-        [2,3,4]
-    ])
-    print(inp * 0.1)
+    inp = [
+        [.1, .2, 0.3,],
+        [.5, .0, .4,],
+    ]
+    br = BatchRegulator(
+        inp = 3,
+        epsilon = 1e-8,
+    )
+    print(br.fp(np.array(inp)))

@@ -1,6 +1,7 @@
 from .layer import Layer, AggregatedLayer, create_learning_layer
 from .affine import Affine
 from .activator import Activator
+from .batch_regulator import BatchRegulator
 
 class LayerFactory:
     @classmethod
@@ -21,3 +22,5 @@ def dispatch_layer_creator(name):
         return Affine
     if name == 'activator':
         return Activator.create
+    if name == 'batch_regulator':
+        return BatchRegulator

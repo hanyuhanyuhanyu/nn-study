@@ -38,7 +38,7 @@ class AggregatedLayer(Layer):
 def create_learning_layer(
     *,
     affine = None,
-    batch_regularization = False,
+    batch_regulator = {},
     activator = None,
 ):
     settings = [
@@ -47,9 +47,11 @@ def create_learning_layer(
             'setting': affine
         },
     ]
-    # todo
-    # if batch_regularization:
-    #     settings.append()
+    if batch_regulator is not None:
+        settings.append({
+            'name': 'batch_regulator',
+            'setting': batch_regulator,
+        })
     settings.append({
         'name': 'activator',
         'setting': activator
