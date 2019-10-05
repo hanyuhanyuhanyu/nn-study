@@ -1,24 +1,23 @@
 import numpy as np
-import copy
 
 class UpdateStrategy:
     @classmethod
-    def create(cls, kind, *_, **kwargs):
-        if(issubclass(kind.__class__, Plain)):
-            return copy.deepcopy(kind)
-        if kind == 'momentum':
+    def create(cls, setting):
+        name = setting.get('name')
+        kwargs = setting.get('setting') or {}
+        if name == 'momentum':
             return Momentum(**kwargs)
-        elif kind == 'adagrad':
-            return Adagrad(**kwargs)
-        elif kind in ["rmsprop", "rms"]:
-            return RMSProp(**kwargs)
-        elif kind == 'adadelta':
-            return AdaDelta(**kwargs)
-        elif kind == 'adam':
-            return AdaDelta(**kwargs)
-        # elif kind in ['nesterov_accelerated_gradient', 'nesterov_ag', 'nag']:
+        if name in ["rmsprop", "rms"]:
+          return RMSProp(**kwargs)
+        if name == 'adagrad':
+          return Adagrad(**kwargs)
+        if name == 'adadelta':
+          return AdaDelta(**kwargs)
+        if name == 'adam':
+          return Adam(**kwargs)
+        # if name in ['nesterov_accelerated_gradient', 'nesterov_ag', 'nag']:
         #     return NesterovAcceleratedGradient()
-        return Plain()
+        return UpdateStrategy(**kwargs)
     @classmethod
     def list_up(cls):
         return [
@@ -29,73 +28,80 @@ class UpdateStrategy:
             'adadelta',
             'adam',
         ]
-class Plain:
-    def __init__(self):
-        self.learn_stack = []
+
+    def __init__(self, 
+            *,
+            learn_rate = 0.0125,
+            **__
+        ):
+        self.learn_rate = learn_rate
+        self.initialize()
     def initialize(self):
         self.learn_stack = []
-    def calc(self, layer, prp):
-        self.learn_stack.append(layer.last_inp.T @ prp)
-    def update(self, layer):
-        upd = -layer.learn_rate * np.sum(np.array(self.learn_stack), axis = 0)
+    def calc(self, inp, prp):
+        self.learn_stack.append(inp.T @ prp)
+    def update(self):
+        upd = -self.learn_rate * np.sum(np.array(self.learn_stack), axis = 0)
         self.initialize()
         return upd
 
-class Momentum(Plain):
+class Momentum(UpdateStrategy):
     #rateはモーメンタム係数momentum coefficientのことだが名前が長すぎるので
-    def __init__(self, *, rate = None):
+    def __init__(self, *, learn_rate = 0.0125, rate = None):
         self.initialize()
         self.last_moment = None
+        self.learn_rate = learn_rate
         self.rate = rate or 0.05
-    def update(self, layer):
-        upd = -layer.learn_rate * np.sum(np.array(self.learn_stack), axis = 0)
+    def update(self):
+        upd = -self.learn_rate * np.sum(np.array(self.learn_stack), axis = 0)
         moment = self.last_moment if self.last_moment is not None else 0
         self.last_moment = len(self.learn_stack) * self.rate * moment + upd
         self.initialize()
         return self.last_moment
 
-class RMSProp(Plain):
+class RMSProp(UpdateStrategy):
     def __init__(self,
             *,
-            epsilon = None,
-            attenuation_rate = None, #減衰率
+            learn_rate = 0.0125,
+            epsilon = 0.1,
+            attenuation_rate = 0.9 #減衰率
         ):
         self.initialize()
         self.last_ada = 0
+        self.learn_rate = learn_rate
         self.attn = attenuation_rate or 0.9
         self.epsilon = epsilon or 0.1 #どれぐらいがいいのかさっぱりわからん
     def initialize(self):
         self.learn_stack = []
         self.ada_stack = []
-    def calc_ada(self, layer, diff):
+    def calc_ada(self, diff):
         return self.attn * self.last_ada + (1 - self.attn) * diff ** 2
-    def calc(self, layer, prp):
-        diff = layer.last_inp.T @ prp
-        ada = self.calc_ada(layer, diff)
+    def calc(self, inp, prp):
+        diff = inp.T @ prp
+        ada = self.calc_ada(diff)
         self.ada_stack.append(ada)
         self.learn_stack.append(diff / np.sqrt(self.epsilon + ada))
-    def update(self, layer):
+    def update(self):
         self.last_ada = np.sum(self.ada_stack, axis = 0)
-        momentum = -layer.learn_rate * np.sum(np.array(self.learn_stack), axis = 0)
+        momentum = -self.learn_rate * np.sum(np.array(self.learn_stack), axis = 0)
         self.initialize()
         return momentum
 
 class Adagrad(RMSProp):
-    def calc_ada(self, layer, diff):
+    def calc_ada(self,  diff):
         return self.last_ada + diff * diff
-    def calc(self, layer, prp):
-        diff = layer.last_inp.T @ prp
-        ada = self.calc_ada(layer, diff)
+    def calc(self, inp, prp):
+        diff = inp.T @ prp
+        ada = self.calc_ada(diff)
         self.ada_stack.append(ada)
         self.learn_stack.append(diff / (self.epsilon + np.sqrt(ada)))
 
 #初期学習率がいらない
 class AdaDelta(RMSProp):
     def __init__(self,
-            *args,
             **kwargs,
         ):
-        super(AdaDelta, self).__init__(*args, **kwargs)
+        super(AdaDelta, self).__init__(**kwargs)
         self.initialize()
         self.diff_mean = 0
     def initialize(self):
@@ -116,10 +122,12 @@ class AdaDelta(RMSProp):
 class Adam(RMSProp):
     def __init__(self,
             *,
-            epsilon = None,
-            attenuation_rate = None, #減衰率
+            learn_rate = 0.0125,
+            epsilon = 0.1,
+            attenuation_rate = 0.9 #減衰率
         ):
         self.initialize()
+        self.learn_rate = learn_rate
         self.moment_first = 0
         self.moment_second = 0
         self.attn = attenuation_rate or 0.9
@@ -128,18 +136,18 @@ class Adam(RMSProp):
     def initialize(self):
         self.moment_1_stack = []
         self.moment_2_stack = []
-    def calc(self, layer, prp):
-        diff = layer.last_inp.T @ prp
+    def calc(self, inp, prp):
+        diff = inp.T @ prp
         mom_1 = self.attn * self.moment_first + (1 - self.attn) * diff
         mom_2 = self.attn * self.moment_second + (1 - self.attn) * diff * diff
         self.moment_1_stack.append(mom_1)
         self.moment_2_stack.append(mom_2)
-    def update(self, layer):
+    def update(self):
         self.moment_first = np.sum(np.array(self.moment_1_stack),axis=0)
         self.moment_second = np.sum(np.array(self.moment_2_stack),axis=0)
         molec = self.moment_first / (1 - self.attn_multipled)
         denomi = self.moment_second / (1 - self.attn_multipled)
-        momentum = -layer.learn_rate * molec / denomi
+        momentum = -self.learn_rate * molec / denomi
         self.initialize()
         self.attn_multipled *= self.attn
         return momentum
