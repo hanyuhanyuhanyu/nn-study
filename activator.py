@@ -69,8 +69,6 @@ class SoftTanh(Activator):
         self.rate = rate or 0.1
     def fp(self, x):
         self.last_inp = x
-        print(x)
-        print(self.rate)
         return np.maximum(self.rate * x, np.minimum(self.rate * x, x))
     def bp(self, prp):
         x = self.last_inp

@@ -15,6 +15,8 @@ class UpdateStrategy:
           return AdaDelta(**kwargs)
         if name == 'adam':
           return Adam(**kwargs)
+        if name == 'plain':
+          return UpdateStrategy(**kwargs)
         # if name in ['nesterov_accelerated_gradient', 'nesterov_ag', 'nag']:
         #     return NesterovAcceleratedGradient()
         return UpdateStrategy(**kwargs)

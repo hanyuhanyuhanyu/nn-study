@@ -18,11 +18,11 @@ class BatchRegulator(Layer):
         self.beta_update_strategy = UpdateStrategy.create(update_strategy or {})
         self.epsilon = epsilon
     def mean(self, inp):
-        return np.mean(inp, axis = 1).reshape(inp.shape[0], 1)
+        return np.mean(inp, axis = 0)
     def zero_shift(self, inp):
         return inp - self.mean(inp)
     def dispersion(self, inp):
-        return (np.std(inp, axis = 1) ** 2).reshape(inp.shape[0], 1)
+        return np.std(inp, axis = 0) ** 2
     def fp(self, inp):
         self.last_inp = inp
         self.last_shifted = self.zero_shift(inp)

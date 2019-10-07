@@ -35,7 +35,7 @@ class SettingCreator:
     def dont_use_batch_regulator(self):
         self.use_batch_flag =  False
     def create_layer_default_setting(self, **kwargs):
-        weight = Activator.initial_weight(self.activator)
+        weight = kwargs.get('weight') or Activator.initial_weight(self.activator)
         out = kwargs.get('out') or self.default_node_num
         batch_regulator = {
             'inp': out,
@@ -109,7 +109,7 @@ class Setting:
             [-.3, 0.1,],
         ]
         settings = SettingCreator(3, 2)
-        settings.epoch_count = 1500
+        settings.epoch_count = 300
         # settings.dont_use_batch_regulator()
         settings.set_default_update_strategy('adagrad')
         settings.activator = 'tanh'
