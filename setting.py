@@ -17,7 +17,7 @@ class SettingCreator:
         self.closed = False
         self.default_node_num = round((self.inp + self.out) * 0.75)
         self.set_default_update_strategy('momentum')
-        self.use_batch_flag = True
+        self.use_batch_regulator_flag = True
         self.activator = 'tanh'
         self.loss = 'square'
         self.epoch_count = 100
@@ -33,14 +33,14 @@ class SettingCreator:
             self.layers.append(self.create_layer_default_setting(**kwargs))
             self.last_out = kwargs.get('out') or self.default_node_num
     def dont_use_batch_regulator(self):
-        self.use_batch_flag =  False
+        self.use_batch_regulator_flag =  False
     def create_layer_default_setting(self, **kwargs):
         weight = kwargs.get('weight') or Activator.initial_weight(self.activator)
         out = kwargs.get('out') or self.default_node_num
         batch_regulator = {
             'inp': out,
         }
-        if self.use_batch_flag is False:
+        if self.use_batch_regulator_flag is False:
             batch_regulator = None
         return {
             'setting': {
@@ -78,16 +78,16 @@ class SettingCreator:
             return self.created
         if(self.last_out != self.out):
             self.close()
-        if self.use_batch_flag:
-            self.layers.insert(0, 
-                {
-                    'name': 'batch_regulator',
-                    'setting': {
-                        'inp': self.inp,
-                        'update_strategy': self.default_update_strategy
-                    }
-                }
-            )
+        # if self.use_batch_regulator_flag:
+        #     self.layers.insert(0, 
+        #         {
+        #             'name': 'batch_regulator',
+        #             'setting': {
+        #                 'inp': self.inp,
+        #                 'update_strategy': self.default_update_strategy
+        #             }
+        #         }
+        #     )
         self.created = Setting(
             inp = inp,
             out = out,
