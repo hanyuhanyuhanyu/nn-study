@@ -111,7 +111,7 @@ class Setting:
         settings = SettingCreator(3, 2)
         settings.epoch_count = 300
         # settings.dont_use_batch_regulator()
-        settings.set_default_update_strategy('adagrad')
+        settings.set_default_update_strategy('rms')
         settings.activator = 'tanh'
         settings.add_layer(1)
         settings.close()
