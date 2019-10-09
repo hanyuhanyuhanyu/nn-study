@@ -41,6 +41,36 @@ class AggregatedLayer(Layer):
             decay += l.weight_sum()
         return decay
 
+class LearningLayer(AggregatedLayer):
+    def __init__(self,
+        *,
+        layers = None
+    ):
+        self.layers = layers or [Layer()]
+        self.last_dropout = 1
+    def fp(self, inp):
+        affine = self.layers[0]
+        inp = affine.fp(inp)
+        self.last_dropout = affine.last_dropout
+        for l in self.layers[1:]:
+            inp = l.fp(inp, dropout = drp)
+        return inp * drp
+    def predict(self, inp):
+        for l in self.layers:
+            inp = l.predict(inp)
+        return inp
+    def bp(self, prop, *args, **kwargs):
+        for l in reversed(self.layers):
+            prop = l.bp(prop, *args, **kwargs)
+        return prop
+    def update(self):
+        for l in self.layers:
+            l.update()
+    def weight_sum(self):
+        decay = 0
+        for l in self.layers:
+            decay += l.weight_sum()
+        return decay
 
 def create_learning_layer(
     *,

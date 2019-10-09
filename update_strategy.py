@@ -39,7 +39,8 @@ class UpdateStrategy:
         # 勾配クリッピング。更新量絶対値のmax
         self.grad_clipping = 0.5
         self.learn_rate = learn_rate
-    def calc(self, diff):
+    def calc(self, diff, *_, **kwargs):
+        self.last_dropout = kwargs.get('dropout') or 1
         self.last_learn = diff
     def update(self):
         return self.clip(-self.learn_rate * self.last_learn)
@@ -55,9 +56,11 @@ class Momentum(UpdateStrategy):
         self.learn_rate = learn_rate
         self.rate = rate or 0.05
     def update(self):
-        upd = -self.learn_rate * self.last_learn
+        drp = self.last_dropout
+        upd = (-self.learn_rate * self.last_learn) * drp
         moment = self.last_moment if self.last_moment is not None else 0
-        self.last_moment = self.clip(self.rate * moment + upd)
+        rate = np.array(drp == 1, self.rate, 1)
+        self.last_moment = self.clip(rate * moment + upd)
         return self.last_moment
 
 
@@ -76,7 +79,7 @@ class RMSProp(UpdateStrategy):
         self.epsilon = epsilon or 0.1 #どれぐらいがいいのかさっぱりわからん
     def calc_ada(self, diff):
         return self.attn * self.last_ada + (1 - self.attn) * diff ** 2
-    def calc(self, diff):
+    def calc(self, diff, *_, **__):
         ada = self.calc_ada(diff)
         self.last_ada = ada
         self.last_learn = diff / np.sqrt(self.epsilon + ada)
@@ -84,7 +87,7 @@ class RMSProp(UpdateStrategy):
 class Adagrad(RMSProp):
     def calc_ada(self,  diff):
         return self.last_ada + diff * diff
-    def calc(self, diff):
+    def calc(self, diff, *_, **__):
         ada = self.calc_ada(diff)
         self.last_ada = ada
         self.last_learn = diff / (self.epsilon + np.sqrt(ada))
@@ -96,7 +99,7 @@ class AdaDelta(RMSProp):
         ):
         super(AdaDelta, self).__init__(**kwargs)
         self.diff_mean = 0
-    def calc(self, diff):
+    def calc(self, diff, *_, **__):
         ada = self.calc_ada(diff)
         update_diff = -diff * np.sqrt(self.epsilon + self.diff_mean) / np.sqrt(self.epsilon + ada)
         self.last_ada = ada
@@ -119,7 +122,7 @@ class Adam(RMSProp):
         self.attn = attenuation_rate or 0.9
         self.attn_multipled = self.attn
         self.epsilon = epsilon or 0.1 #どれぐらいがいいのかさっぱりわからん
-    def calc(self, diff):
+    def calc(self, diff, *_, **__):
         mom_1 = self.attn * self.moment_first + (1 - self.attn) * diff
         mom_2 = self.attn * self.moment_second + (1 - self.attn) * diff * diff
         self.moment_first = mom_1
