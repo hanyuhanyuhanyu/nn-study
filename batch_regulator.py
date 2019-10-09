@@ -12,6 +12,10 @@ class BatchRegulator(Layer):
         **kwargs
     ):
         self.inp = inp
+        # ema => Exponential Moving Average
+        self.ema_rate = 0.875
+        self.ema_of_mean = None
+        self.ema_of_dispersion = None
         self.gamma = BiasInitializer.initialize(inp)
         self.beta = BiasInitializer.initialize(inp)
         self.gamma_update_strategy = UpdateStrategy.create(update_strategy or {})
@@ -19,18 +23,25 @@ class BatchRegulator(Layer):
         self.epsilon = epsilon
     def mean(self, inp):
         return np.mean(inp, axis = 0)
-    def zero_shift(self, inp):
-        return inp - self.mean(inp)
     def dispersion(self, inp):
         return np.std(inp, axis = 0) ** 2
+    def calc_emas(self):
+        if self.ema_of_mean is None:
+            self.ema_of_mean = self.last_shifted
+            self.ema_of_dispersion = self.last_dispersion
+        else:
+            self.ema_of_mean = self.ema_of_mean * self.ema_rate + self.last_mean * (1 - self.ema_rate)
+            self.ema_of_dispersion = self.ema_of_dispersion * self.ema_rate + self.last_dispersion * (1 - self.ema_rate)
     def fp(self, inp):
         self.last_inp = inp
-        self.last_shifted = self.zero_shift(inp)
+        self.last_mean = self.mean(inp)
+        self.last_shifted = inp - self.last_mean
         self.last_dispersion = self.dispersion(inp)
+        self.calc_emas()
         return self.predict(inp, self.last_shifted, self.last_dispersion)
     def predict(self, inp, shifted = None, dispersion = None):
-        shifted = shifted if shifted is not None else self.zero_shift(inp)
-        dispersion = dispersion if dispersion is not None else self.dispersion(inp)
+        shifted = shifted if shifted is not None else inp - self.ema_of_mean
+        dispersion = dispersion if dispersion is not None else self.ema_of_dispersion
         return self.beta + shifted * self.gamma / np.sqrt(dispersion + self.epsilon)
     def bp(self, prop):
         inp = self.last_inp
