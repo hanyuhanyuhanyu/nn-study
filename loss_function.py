@@ -20,7 +20,7 @@ class SoftMax:
         calc = np.exp(x.T - mx)
         self.last_result = (calc / np.sum(calc, axis=0)).T
         return self.last_result
-    def bp(self, prp):
+    def bp(self, prp, *_, **__):
         return prp * self.last_result * (1 - self.last_result)
 
 class CrossEntropy(LossFunction):

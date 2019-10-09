@@ -35,7 +35,7 @@ class Softplus(Activator):
         self.last_calc = 1 + np.exp(x)
         self.last_inp = x
         return np.log(self.last_calc)
-    def bp(self, prp):
+    def bp(self, prp, *_, **__):
         return prp / self.last_calc
 
 class Sigmoid(Activator):
@@ -43,7 +43,7 @@ class Sigmoid(Activator):
         self.last_calc = np.exp(x * (-1))
         self.last_result = 1 / (1 + self.last_calc)
         return self.last_result
-    def bp(self, prp):
+    def bp(self, prp, *_, **__):
         return prp * self.last_calc * (self.last_result ** 2)
 
 class Tanh(Activator):
@@ -51,7 +51,7 @@ class Tanh(Activator):
         self.last_inp = x
         self.last_result = np.tanh(x)
         return self.last_result
-    def bp(self, prp):
+    def bp(self, prp, *_, **__):
         return prp * (1 - (self.last_result ** 2))
     def num_diff_func(self):
         return np.tanh
@@ -60,7 +60,7 @@ class HardTanh(Activator):
     def fp(self, x):
         self.last_inp = x
         return np.maximum(0, np.minimum(1, x))
-    def bp(self, prp):
+    def bp(self, prp, *_, **__):
         x = self.last_inp
         return prp * (np.array((x > 0) * (x < 1)).astype(np.int))
 
@@ -70,7 +70,7 @@ class SoftTanh(Activator):
     def fp(self, x):
         self.last_inp = x
         return np.maximum(self.rate * x, np.minimum(self.rate * x, x))
-    def bp(self, prp):
+    def bp(self, prp, *_, **__):
         x = self.last_inp
         x[(x > 0.) & (x < 1.)] = 1
         x[(x <= 0.) | (1 < x)] = self.rate
@@ -82,7 +82,7 @@ class LeakyRelu(Activator):
     def fp(self, x):
         self.last_inp = x
         return np.maximum(self.rate * x, x)
-    def bp(self, prp):
+    def bp(self, prp, *_, **__):
         x = self.last_inp
         x[x > 0.] = 1
         x[x <= 0.] = self.rate

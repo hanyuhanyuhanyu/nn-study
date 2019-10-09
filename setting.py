@@ -14,6 +14,7 @@ class SettingCreator:
         self.out = out_size
         self.last_out = inp_size
         self.layers = []
+        self.weight_decay = None
         self.closed = False
         self.default_node_num = round((self.inp + self.out) * 0.75)
         self.set_default_update_strategy('momentum')
@@ -94,6 +95,7 @@ class SettingCreator:
             layers_setting = {'layers': self.layers},
             mini_batch_strategy_setting = self.create_mini_batch_setting(),
             loss_setting = self.loss,
+            weight_decay = self.weight_decay,
         )
         return self.created
     
@@ -111,6 +113,7 @@ class Setting:
         settings = SettingCreator(3, 2)
         settings.epoch_count = 300
         # settings.dont_use_batch_regulator()
+        # settings.weight_decay = 0.2
         settings.set_default_update_strategy('rms')
         settings.activator = 'tanh'
         settings.add_layer(1)
@@ -127,6 +130,7 @@ class Setting:
         self.layers_setting = kwargs.get('layers_setting')
         self.loss_setting = kwargs.get('loss_setting')
         self.layer_default = None
+        self.weight_decay = kwargs.get('weight_decay')
         self.descriptor_setting = None
     def create_mini_batch(self):
         return MiniBatchStrategy.create(self.inp, self.out, self.mini_batch_strategy_setting)

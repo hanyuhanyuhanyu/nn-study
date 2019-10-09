@@ -43,7 +43,7 @@ class BatchRegulator(Layer):
         shifted = shifted if shifted is not None else inp - self.ema_of_mean
         dispersion = dispersion if dispersion is not None else self.ema_of_dispersion
         return self.beta + shifted * self.gamma / np.sqrt(dispersion + self.epsilon)
-    def bp(self, prop):
+    def bp(self, prop, *_, **__):
         inp = self.last_inp
         n = inp.shape[1]
         shifted = self.last_shifted

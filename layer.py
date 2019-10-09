@@ -7,10 +7,12 @@ class Layer:
         return self.predict(inp)
     def predict(self, inp):
         return inp
-    def bp(self, prop):
+    def bp(self, prop, *args, **kwargs):
         return prop
     def update(self):
         pass
+    def weight_sum(self):
+        return 0
 
 class AggregatedLayer(Layer):
     def __init__(self,
@@ -26,13 +28,18 @@ class AggregatedLayer(Layer):
         for l in self.layers:
             inp = l.predict(inp)
         return inp
-    def bp(self, prop):
+    def bp(self, prop, *args, **kwargs):
         for l in reversed(self.layers):
-            prop = l.bp(prop)
+            prop = l.bp(prop, *args, **kwargs)
         return prop
     def update(self):
         for l in self.layers:
             l.update()
+    def weight_sum(self):
+        decay = 0
+        for l in self.layers:
+            decay += l.weight_sum()
+        return decay
 
 
 def create_learning_layer(
