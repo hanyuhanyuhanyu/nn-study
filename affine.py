@@ -27,8 +27,7 @@ class Affine(Layer):
         return x @ self.weight + self.bias
     def bp(self, prp, *args, **kwargs):
         modification = self.last_inp.T @ prp
-        modification += kwargs.get('weight_decay') or 0
-        print(kwargs.get('weight_decay') or 0)
+        modification += (kwargs.get('weight_decay') or 0) * self.weight
         self.update_strategy.calc(modification)
         return prp @ self.weight.T
     def weight_sum(self):

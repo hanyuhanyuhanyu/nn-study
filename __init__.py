@@ -19,9 +19,9 @@ class LearningMachine:
                 data = mini_batch.next()
                 fp = layers.fp(data.inp)
                 loss = loss_func.fp(fp, data.out)
+                descriptor.add_loss_history(loss)
                 decay = self.weight_decay(layers)
                 loss += decay 
-                descriptor.add_loss_history(loss)
                 bp = loss_func.bp(fp, data.out)
                 layers.bp(bp, weight_decay = self.weight_decay_for_bp(layers))
                 layers.update()
@@ -33,12 +33,7 @@ class LearningMachine:
         self.last_decay = layers.weight_sum()
         return self.setting.weight_decay * self.last_decay ** 2 / 2
     def weight_decay_for_bp(self, layers):
-        if self.setting.weight_decay is None:
-            return 0
-        if self.last_decay is None:
-            self.weight_decay(layers) # decayのキャッシュを裏でやっている
-        decay = self.last_decay
-        return self.setting.weight_decay * decay
+        return self.setting.weight_decay or 0
 
 
 def test():
