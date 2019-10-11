@@ -38,6 +38,8 @@ class LearningMachine:
 
 def test():
     LearningMachine(Setting.forTest()).learn()
+def kadai():
+    LearningMachine(Setting.kadai()).learn()
 
 def exp():
     inp = [

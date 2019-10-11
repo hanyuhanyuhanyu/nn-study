@@ -1,3 +1,4 @@
+import numpy as np
 from .activator import Activator
 from .mini_batch_strategy import MiniBatchStrategy
 from .layer_factory import LayerFactory
@@ -99,7 +100,27 @@ class SettingCreator:
         )
         return self.created
     
+def modify_data(data):
+    ret = []
+    for d in data:
+        ret.append((d < 96).astype(np.int).flatten())
+    return np.array(ret)
+def modify_label(label):
+    return label
+
 class Setting:
+    @classmethod
+    def defaultTest(cls, inp, out):
+        settings = SettingCreator(inp.shape[1], out.shape[1])
+        settings.epoch_count = 10
+        settings.dont_use_batch_regulator()
+        # settings.weight_decay = 0.2
+        settings.set_default_update_strategy('plain')
+        settings.activator = 'relu'
+        settings.add_layer(2)
+        settings.close()
+        settings.loss = 'cross'
+        return settings.create(inp, out)
     @classmethod
     def forTest(cls):
         inp = [
@@ -110,16 +131,15 @@ class Setting:
             [.5, .2,],
             [-.3, 0.1,],
         ]
-        settings = SettingCreator(3, 2)
-        settings.epoch_count = 300
-        # settings.dont_use_batch_regulator()
-        settings.weight_decay = 0.2
-        settings.set_default_update_strategy('rms')
-        settings.activator = 'tanh'
-        settings.add_layer(1)
-        settings.close()
-        loss_setting = None
-        return settings.create(inp, out)
+        return Setting.defaultTest(inp, out)
+
+    @classmethod
+    def kadai(cls):
+        dta = np.load('/workdir/nn/kadai/train_data.npy')
+        lbl = np.load('/workdir/nn/kadai/train_label.npy')
+        dta = modify_data(dta)
+        lbl = modify_label(lbl)
+        return Setting.defaultTest(dta, lbl)
 
     def __init__(self, inp, out, **kwargs):
         self.inp = inp
