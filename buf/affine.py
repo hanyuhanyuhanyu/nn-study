@@ -33,7 +33,6 @@ class Affine(Layer):
     def weight_sum(self):
         return np.sum(self.weight)
     def update(self):
-        # print(self.weight)
         diff = self.update_strategy.update()
         self.weight = self.weight + diff
         return diff

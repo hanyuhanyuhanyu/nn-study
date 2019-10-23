@@ -28,25 +28,7 @@ class CrossEntropy(LossFunction):
         self.softmax = SoftMax()
     def fp(self, inp, out):
         softmaxed = self.softmax.fp(inp)
-        self.last_soft = softmaxed
-        return (-np.sum(out * np.log(np.clip(softmaxed, 1e-12, None)), axis = 1)) / inp.shape[0]
+        return -np.sum(out * np.log(np.clip(softmaxed, 1e-12, None)), axis = 1)
     def bp(self, inp, out):
-        return np.sum(self.last_soft - out, axis = 0) / inp.shape[0]
+        return self.softmax.bp(-out / np.clip(inp, 1e-12, None))
         
-def loss_test():
-    arr = np.array([
-        [10000,0,0],
-        [0,10000,0],
-    ])
-    out = np.array(
-        [
-            [1,0,0],
-            [0,1,0],
-        ]
-    )
-    sft = SoftMax()
-    print(sft.fp(arr))
-    crs = CrossEntropy()
-    print(crs.fp(arr, out))
-    print(crs.bp(arr, out))
-

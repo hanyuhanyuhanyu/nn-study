@@ -111,15 +111,13 @@ def modify_label(label):
 class Setting:
     @classmethod
     def defaultTest(cls, inp, out):
-        inp = np.array(inp)
-        out = np.array(out)
         settings = SettingCreator(inp.shape[1], out.shape[1])
-        settings.epoch_count = 300
+        settings.epoch_count = 10
         settings.dont_use_batch_regulator()
         # settings.weight_decay = 0.2
-        settings.set_default_update_strategy('plain', learn_rate=.01)
-        settings.activator = 'tanh'
-        settings.add_layer(1, out = out.shape[1])
+        settings.set_default_update_strategy('plain')
+        settings.activator = 'relu'
+        settings.add_layer(2)
         settings.close()
         settings.loss = 'cross'
         return settings.create(inp, out)
@@ -132,21 +130,6 @@ class Setting:
         out = [
             [.5, .2,],
             [-.3, 0.1,],
-        ]
-        return Setting.defaultTest(inp, out)
-    @classmethod
-    def forTestCross(cls):
-        inp = [
-            [.1, .2, .3,],
-            [-.5, .0, .4,],
-            [.5, .1, .4,],
-            [-.8, -.2, .0,],
-        ]
-        out = [
-            [1., 0.],
-            [0., 1.],
-            [1., 0.],
-            [1., 0.],
         ]
         return Setting.defaultTest(inp, out)
 

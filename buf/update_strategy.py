@@ -33,7 +33,7 @@ class UpdateStrategy:
 
     def __init__(self, 
             *,
-            learn_rate = 0.125,
+            learn_rate = 0.0125,
             **__
         ):
         # 勾配クリッピング。更新量絶対値のmax
@@ -49,7 +49,7 @@ class UpdateStrategy:
 
 class Momentum(UpdateStrategy):
     #rateはモーメンタム係数momentum coefficientのことだが名前が長すぎるので
-    def __init__(self, *, learn_rate = 0.125, rate = None, **kwargs):
+    def __init__(self, *, learn_rate = 0.0125, rate = None, **kwargs):
         super(Momentum, self).__init__(**kwargs)
         self.last_moment = None
         self.learn_rate = learn_rate
@@ -64,7 +64,7 @@ class Momentum(UpdateStrategy):
 class RMSProp(UpdateStrategy):
     def __init__(self,
             *,
-            learn_rate = 0.125,
+            learn_rate = 0.0125,
             epsilon = 0.1,
             attenuation_rate = 0.9, #減衰率
             **kwargs,
@@ -107,7 +107,7 @@ class AdaDelta(RMSProp):
 class Adam(RMSProp):
     def __init__(self,
             *,
-            learn_rate = 0.125,
+            learn_rate = 0.0125,
             epsilon = 0.1,
             attenuation_rate = 0.9, #減衰率
             **kwargs,

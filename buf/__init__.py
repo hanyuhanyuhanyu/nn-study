@@ -2,7 +2,6 @@ from .setting import Setting
 import time
 import numpy as np
 from .batch_regulator import BatchRegulator
-from .loss_function import loss_test
 class LearningMachine:
     def __init__(self, setting):
         self.setting = setting
@@ -20,7 +19,6 @@ class LearningMachine:
                 data = mini_batch.next()
                 fp = layers.fp(data.inp)
                 loss = loss_func.fp(fp, data.out)
-                descriptor.add_accuracy(self.calc_accuracy(fp, data.out))
                 descriptor.add_loss_history(loss)
                 decay = self.weight_decay(layers)
                 loss += decay 
@@ -36,18 +34,12 @@ class LearningMachine:
         return self.setting.weight_decay * self.last_decay ** 2 / 2
     def weight_decay_for_bp(self, layers):
         return self.setting.weight_decay or 0
-    def calc_accuracy(self, inp, out):
-        return np.mean((np.argmax(inp, axis = 1) == np.argmax(out, axis = 1)).astype(np.float))
 
 
 def test():
     LearningMachine(Setting.forTest()).learn()
 def kadai():
     LearningMachine(Setting.kadai()).learn()
-def cross():
-    loss_test()
-def crossTest():
-    LearningMachine(Setting.forTestCross()).learn()
 
 def exp():
     inp = [
