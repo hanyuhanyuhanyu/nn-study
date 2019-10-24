@@ -17,6 +17,7 @@ class Descriptor:
     def descript(self, model): 
         losses = self.loss_history
         print('last loss', losses[-1])
+        print('last accuracy', self.accuracy_history[-1])
         x = range(len(losses))
         plt.figure()
         plt.plot(x, losses)

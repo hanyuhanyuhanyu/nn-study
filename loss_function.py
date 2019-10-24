@@ -31,7 +31,7 @@ class CrossEntropy(LossFunction):
         self.last_soft = softmaxed
         return (-np.sum(out * np.log(np.clip(softmaxed, 1e-12, None)), axis = 1)) / inp.shape[0]
     def bp(self, inp, out):
-        return np.sum(self.last_soft - out, axis = 0) / inp.shape[0]
+        return self.last_soft - out
         
 def loss_test():
     arr = np.array([

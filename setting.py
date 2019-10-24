@@ -114,7 +114,7 @@ class Setting:
         inp = np.array(inp)
         out = np.array(out)
         settings = SettingCreator(inp.shape[1], out.shape[1])
-        settings.epoch_count = 300
+        settings.epoch_count = 1000
         settings.dont_use_batch_regulator()
         # settings.weight_decay = 0.2
         settings.set_default_update_strategy('plain', learn_rate=.01)
