@@ -13,6 +13,8 @@ class Layer:
         pass
     def weight_sum(self):
         return 0
+    def give_to_next(self):
+        return {}
 
 class AggregatedLayer(Layer):
     def __init__(self,
@@ -42,12 +44,34 @@ class AggregatedLayer(Layer):
         return decay
 
 
+def create_cnn(setting, activator, pooling):
+    layers = [
+        {
+            'name': 'convolution',
+            'setting': setting,
+        },
+        {
+            'name': 'activator',
+            'setting': activator
+        },
+        {
+            'name': 'pooling',
+            'setting': pooling,
+        }
+    ]
+    return {'layers': layers}
 def create_learning_layer(
     *,
     affine = None,
+    convolution = None,
     batch_regulator = None,
     activator = None,
+    pooling = None,
 ):
+    if affine is None and convolution is None:
+        raise Exception('affine or convolution setting required')
+    if affine is None:
+        return create_cnn(convolution, activator, pooling)
     settings = [
         {
             'name': 'affine',

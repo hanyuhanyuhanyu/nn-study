@@ -48,6 +48,8 @@ def cross():
     loss_test()
 def crossTest():
     LearningMachine(Setting.forTestCross()).learn()
+def cnn(): 
+    LearningMachine(Setting.cnn()).learn()
 
 def exp():
     inp = [

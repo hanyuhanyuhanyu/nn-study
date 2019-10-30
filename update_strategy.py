@@ -126,7 +126,7 @@ class Adam(RMSProp):
         self.moment_second = mom_2
     def update(self):
         molec = self.moment_first / (1 - self.attn_multipled)
-        denomi = self.moment_second / (1 - self.attn_multipled)
+        denomi = np.clip(self.moment_second / (1 - self.attn_multipled), 1e-7, None)
         self.attn_multipled *= self.attn
         return self.clip(-self.learn_rate * molec / denomi)
 

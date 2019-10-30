@@ -1,0 +1,10 @@
+def pad(imgs, h, w, fh, fw, stride):
+    height_lack = math.ceil((h - fh) / stride) * stride + fh - h
+    width_lack =  math.ceil((w - fw) / stride) * stride + fw- w
+
+    pad_hu = math.floor(height_lack / 2)
+    pad_hb = height_lack - pad_hu
+    pad_wl = math.floor(width_lack / 2)
+    pad_wr = width_lack - pad_wl
+    return np.pad(imgs, ((0, 0), (0, 0), (pad_hu, pad_hb), (pad_wl, pad_wr)), 'constant')
+

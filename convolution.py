@@ -4,16 +4,27 @@ from .layer import Layer
 from .weight_initializer import WeightInitializer
 from .bias_initializer import BiasInitializer
 from .update_strategy import UpdateStrategy
+def pad(imgs, h, w, fh, fw, stride):
+    height_lack = math.ceil((h - fh) / stride) * stride + fh - h
+    width_lack =  math.ceil((w - fw) / stride) * stride + fw- w
+
+    pad_hu = math.floor(height_lack / 2)
+    pad_hb = height_lack - pad_hu
+    pad_wl = math.floor(width_lack / 2)
+    pad_wr = width_lack - pad_wl
+    return np.pad(imgs, ((0, 0), (0, 0), (pad_hu, pad_hb), (pad_wl, pad_wr)), 'constant')
+
 
 class Convolution(Layer):
     def __init__(self, 
         *,
         height,
         width,
+        channel,
         filter_height,
         filter_width,
+        filter_channel,
         stride,
-        channel_count,
         weight = None,
         bias = None,
         update_strategy = None,
@@ -23,12 +34,19 @@ class Convolution(Layer):
         self.width = width
         self.filter_height = filter_height
         self.filter_width = filter_width
+        self.filter_channel = filter_channel
         self.stride = stride
-        self.channel_count = channel_count
-        self.weight = WeightInitializer.initialize(filter_height * filter_width * channel_count, channel_count, weight)
+        self.weight = WeightInitializer.initialize(filter_height * filter_width * channel, filter_channel, weight)
         self.bias = BiasInitializer.initialize(1, bias)[0]
         self.update_strategy = UpdateStrategy.create(update_strategy or {})
+    def give_to_next(self):
+        return {
+            'height': self.out_height(),
+            'width': self.out_width(),
+            'channel': self.filter_channel,
+        }
     def fp(self, x):
+        hogen= self.predict(x)
         return self.predict(x)
     def out_height(self):
         return (math.floor((self.height - self.filter_height) / self.stride) + 1)
@@ -64,11 +82,11 @@ class Convolution(Layer):
         filter_height = self.filter_height
         filter_width = self.filter_width
         stride = self.stride
-        data_count, channel_count, height, width = imgs.shape
+        data_count, self.channel_count, height, width = imgs.shape
         height_count = self.out_height()
         width_count = self.out_width()
         ret = self.im2col(imgs)
-        return (ret @ self.weight).transpose(0,2,1).reshape(data_count, channel_count, height_count, width_count) + self.bias
+        return (ret @ self.weight).transpose(0,2,1).reshape(data_count, self.filter_channel, height_count, width_count) + self.bias
     def col2im(self, cols):
         height = self.height
         width = self.width
@@ -87,7 +105,7 @@ class Convolution(Layer):
                 height_end = self.h_final(h)
                 width_end = self.w_final(w)
                 this_get = cols[:, :, i::s].transpose(0,2,1).reshape(data_count, channel_count, width_count, height_count)
-                ret[:, :, h:h+height_count:stride, w:w+width_count:stride] += this_get
+                ret[:, :, h:h+height_count*stride:stride, w:w+width_count*stride:stride] = this_get
                 i += 1
         return ret
     def bp(self, prp, **kwargs):
@@ -103,6 +121,7 @@ class Pooling(Convolution):
         *,
         height,
         width,
+        channel,
         filter_height,
         filter_width,
         stride,
@@ -112,6 +131,7 @@ class Pooling(Convolution):
         self.width = width
         self.filter_height = filter_height
         self.filter_width = filter_width
+        self.channel = channel
         self.stride = stride
     def init_return_matrix(self, data, channel, out):
         self.count = 0
@@ -122,6 +142,12 @@ class Pooling(Convolution):
     def finalize_return_matrix(self, imgs, d, c, h, w):
         self.back = np.zeros((d, c, self.height, self.width), float)
         return (self.ret / self.count).reshape(d,c,h,w)
+    def give_to_next(self):
+        return {
+            'height': self.out_height(),
+            'width': self.out_width(),
+            'channel': self.channel,
+        }
     def fp(self, imgs):
         filter_height = self.filter_height
         filter_width = self.filter_width
@@ -143,13 +169,19 @@ class Pooling(Convolution):
                 self.add_one_to_return_matrix(this_time)
                 i += 1
         return self.finalize_return_matrix(imgs, data_count, channel_count, height_count, width_count)
-    def bp(self, prp):
-        d,c, _, __ = prp.shape
+    def bp(self, prp, *args, **kwargs):
+        d,___, _, __ = prp.shape
         prp /= self.count
         i = 0
         s = self.stride
+        c = self.channel
+        height = self.height
+        width = self.width
+        take_height = self.out_height() * s
+        take_width = self.out_width() * s
         for h in range(self.filter_height):
             for w in range(self.filter_width):
-                self.back[:, :, h:h+self.filter_height, w:w+self.filter_width] += prp[:, :, h, w].reshape(d, 1, 1, c)
+                self.back[:, :, h:h+take_height:s, w:w+take_width:s] += prp[:, :, :, :]
                 i += 1 
         return self.back
+
