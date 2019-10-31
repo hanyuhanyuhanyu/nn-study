@@ -115,7 +115,8 @@ class SettingCreatorCnn(SettingCreator):
         self.channel = channel
         self.out = out_size
         self.stride = kwargs.get('stride') or 2
-        self.filter_channel = kwargs.get('filter_channel') or 5
+        self.filter_channel = kwargs.get('filter_channel') or 2
+        self.default_pooling_kind = 'max'
         self.layers = []
         self.weight_decay = None
         self.closed = False
@@ -157,7 +158,9 @@ class SettingCreatorCnn(SettingCreator):
         self.height = self.out_height(self.height, fh, s)
         self.width = self.out_width(self.width, fw, s)
         self.channel = fc
+        pooling_kind = kwargs.get('pooling_kind') or self.default_pooling_kind
         pooling_setting = {
+            'kind': pooling_kind,
             'height': self.height,
             'width': self.width,
             'channel': fc,
@@ -263,7 +266,7 @@ class Setting:
         _,channel,height,width = inp.shape
         out_size = out.shape[1]
         settings = SettingCreatorCnn(height, width, channel, out_size)
-        settings.epoch_count = 1000
+        settings.epoch_count = 500
         # b_r corrupted. below line required until that fixed
         settings.dont_use_batch_regulator()
         # settings.weight_decay = 0.2

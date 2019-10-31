@@ -3,6 +3,26 @@ import time
 import numpy as np
 from .batch_regulator import BatchRegulator
 from .loss_function import loss_test
+def m():
+    inp = np.array(
+        [
+            [
+                [0,1,2],
+                [1,2,0],
+                [2,1,0],
+            ],
+            [
+                [2,0,1],
+                [1,0,2],
+                [0,2,1],
+            ]
+        ]
+    )
+    hoge = np.zeros(inp.shape)
+    d,c,_ = inp.shape
+    print(inp.max(-1))
+    mx = (inp.argmax(-1)[...,None] == np.arange(inp.shape[2])).astype(float)
+    print(mx * inp)
 class LearningMachine:
     def __init__(self, setting):
         self.setting = setting

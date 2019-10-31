@@ -28,7 +28,7 @@ def dispatch_layer_creator(name):
     if name == 'affine':
         return Affine
     if name == 'pooling':
-        return Pooling
+        return Pooling.create
     if name == 'activator':
         return Activator.create
     if name == 'batch_regulator':

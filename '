@@ -116,14 +116,6 @@ class Convolution(Layer):
         return self.col2im(prp @ self.weight.T)
 
 class Pooling(Convolution):
-    @classmethod
-    def create(cls, **setting):
-        kind = setting.get('kind')
-        if kind == 'max':
-            return MaxPooling(**setting)
-        if kind == 'plain':
-            return Pooling(**setting)
-        return Pooling(**setting)
     def __init__(self, 
         *,
         height,
@@ -201,42 +193,17 @@ class MaxPooling(Pooling):
     def finalize_return_matrix(self, imgs, d, c, h, w):
         self.back = np.zeros((d, c, self.height, self.width), float)
         return (self.ret / self.count).reshape(d,c,h,w)
-    def im2col(self, imgs):
-        filter_height = self.filter_height
-        filter_width = self.filter_width
-        stride = self.stride
-        data_count, channel_count, height, width = imgs.shape
-        imgs = pad(imgs, height, width, filter_height, filter_width, stride)
-        _, __, height, width = imgs.shape
-        height_count = self.out_height()
-        width_count = self.out_width()
-        filter_size = filter_height * filter_width
-        out_height = height_count * width_count
-        out_width = channel_count * filter_size
-        each_height = math.floor(height * width / (stride * stride))
-        ret = np.zeros((data_count, channel_count, out_height, filter_size), float)
-        i = 0
-        for h in range(filter_height):
-            for w in range(filter_width):
-                this_time = imgs[:, :, h:h+height_count*stride:stride, w:w+width_count*stride:stride].reshape((data_count, channel_count, out_height))
-                ret[:, :, :, i] += this_time
-                i += 1
-        return ret
     def fp(self, imgs):
         data_count, channel_count, height, width = imgs.shape
         _, __, height, width = imgs.shape
-        imgs = pad(imgs, height, width, self.filter_height, self.filter_width, self.stride)
+        imgs = pad(imgs, height, width, filter_height, filter_width, stride)
         col = self.im2col(imgs)
         self.last_mask = (col.argmax(-1)[...,None] == np.arange(col.shape[-1])).astype(float)
-        oh = self.out_height()
-        ow = self.out_width()
-        self.back = np.zeros((data_count, channel_count, height, width))
-        return col.max(-1).reshape(data_count, channel_count, oh, ow)
+        return col.max(-1).reshape(data_count, channel_count, self.out_height(), self.out_width())
     def bp(self, prp, *args, **kwargs):
-        d, c, h, w = prp.shape
-        multi = self.last_mask * prp.reshape(d,c,h*w,1)
-        count = multi.shape[2]
-        masked = multi.reshape(d,c,count,self.filter_height,self.filter_width)
+        d,c, h, w = prp.shape
+        masked  = self.last_mask * prp.reshape(d,c,1,h*w)
+        prp /= self.count
         i = 0
         s = self.stride
         c = self.channel
@@ -246,6 +213,6 @@ class MaxPooling(Pooling):
         take_width = self.out_width() * s
         for h in range(self.filter_height):
             for w in range(self.filter_width):
-                self.back[:, :, h:h+self.filter_height, w:w+self.filter_width] += masked[:,:,i]
+                self.back[:, :, h:h+take_height:s, w:w+take_width:s] += masked[i]
                 i += 1 
         return self.back
